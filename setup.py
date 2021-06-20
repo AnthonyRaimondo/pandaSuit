@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='pandaSuit',
-    version='0.0.1',
-    packages=find_packages(where='src/main/python/'),
-    package_dir={'': 'src/main/python/'},
+    version='0.0.2',
+    packages=find_packages(where='src/main/python'),
+    package_dir={'': 'src/main/python'},
     url='https://github.com/AnthonyRaimondo/pandaSuit',
     license='GNU',
     author='Anthony Raimondo',
