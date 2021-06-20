@@ -24,7 +24,7 @@ class DF:
                     if self._names_supplied(row):
                         return self.df.loc[row].iloc[:, column]
                     else:
-                        return self.df[column].iloc[row]
+                        return self.df.iloc[row, column]
 
     @staticmethod
     def _names_supplied(selector: int or str or list) -> bool:
