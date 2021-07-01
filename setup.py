@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pandaSuit',
-    version='0.0.3',
+    version='0.0.4',
     packages=find_packages(where='src/main/python'),
     package_dir={'': 'src/main/python'},
     url='https://github.com/AnthonyRaimondo/pandaSuit',
