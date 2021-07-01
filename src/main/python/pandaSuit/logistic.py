@@ -33,20 +33,13 @@ class LogisticModel:
         return list(self.model.coef_.tolist()[0])
 
     # Private prediction methods
-    def _theoretical_prediction(self, input: Series or dict or object) -> float:
-        if isinstance(input, dict):
-            log_odds = (self.betas * Series(input)).sum() + (self.intercept if self.include_intercept else 0.0)
-            return exp(log_odds) / (1 + exp(log_odds))
-        elif isinstance(input, Series):
-            log_odds = (self.betas * input).sum() + (self.intercept if self.include_intercept else 0.0)
-            return exp(log_odds) / (1 + exp(log_odds))
-        elif isinstance(input, (float, int)):
-            log_odds = (sum(self.betas * input)) + (self.intercept if self.include_intercept else 0.0)
-            return exp(log_odds) / (1 + exp(log_odds))
+    def _theoretical_prediction(self, input: Series or dict) -> bool:
+        if isinstance(input, Series):
+            return int(list(self.model.predict(input.to_numpy().reshape(1, -1)))[0]) == 1
         else:
-            raise Exception("Must supply Series, dict, int or float to .predict() method")
+            return int(list(self.model.predict(Series(input).to_numpy().reshape(1, -1)))[0]) == 1
 
-    def _practical_prediction(self, input: Series or dict or object) -> float:  # todo
+    def _practical_prediction(self, input: Series or dict or int or float) -> float:  # todo
         if isinstance(input, dict):
             for predictor_name, predictor_value in input.items():
                 input[predictor_name] = predictor_value + (choice([-1, 1]) * self.independent.standard_deviation(column=predictor_name))
@@ -54,6 +47,6 @@ class LogisticModel:
         elif isinstance(input, Series):
             return self._practical_prediction(input.to_dict())
         elif isinstance(input, (float, int)):
-            return self._theoretical_prediction(input + self.independent.standard_deviation() * choice([-1, 1]))
+            return self._theoretical_prediction(input + self.independent.std() * choice([-1, 1]))
         else:
             raise Exception("Must supply Series, dict, int or float to .predict() method")
