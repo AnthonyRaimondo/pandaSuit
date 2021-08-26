@@ -1,21 +1,24 @@
 from sklearn.linear_model import LinearRegression
-from pandas import Series
+from pandas import Series, DataFrame
 
 
 class LinearModel:
 
-    def __init__(self, dependent: Series, independent: Series, intercept: bool = True):
+    def __init__(self, dependent: Series or DataFrame, independent: Series or DataFrame, intercept: bool = True):
         super().__init__()
         self.dependent = dependent
         self.independent = independent
         self.include_intercept = intercept
         self.model = self._fit()
 
-    def predict(self, input: Series or dict or int or float, practical: bool = False) -> float:
+    def predict(self, input: Series or dict or int or float, practical: bool = False) -> float or list:
         return self._practical_prediction(input) if practical else self._theoretical_prediction(input)
 
     def _fit(self) -> LinearRegression:
-        y = self.dependent.to_list()
+        if isinstance(self.dependent, DataFrame):
+            y = self.dependent.values
+        else:
+            y = self.dependent.to_list()
         if isinstance(self.independent, Series):
             x = self.independent.to_numpy().reshape(-1, 1)
         else:
@@ -33,14 +36,10 @@ class LinearModel:
 
     # Private prediction methods
     def _theoretical_prediction(self, input: Series or dict) -> float:
-        if isinstance(input, dict):
-            return (self.betas * Series(input)).sum() + (self.intercept if self.include_intercept else 0.0)
-        elif isinstance(input, Series):
-            return (self.betas * input).sum() + (self.intercept if self.include_intercept else 0.0)
-        elif isinstance(input, (float, int)):
-            return (sum(self.betas * input)) + (self.intercept if self.include_intercept else 0.0)
+        if isinstance(input, Series):
+            return list(self.model.predict(input.to_numpy().reshape(1, -1))[0])
         else:
-            raise Exception("Must supply Series, dict, int or float to .predict() method")
+            return list(self.model.predict(Series(input).to_numpy().reshape(1, -1))[0])
 
     def _practical_prediction(self, input: Series or dict) -> float:  # todo
         if isinstance(input, dict):
