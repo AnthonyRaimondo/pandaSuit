@@ -114,3 +114,10 @@ class TestDF:
 
     def test_update_column_and_return_by_name(self, sample_df):
         pass
+
+    def test_sum_product(self, sample_df):
+        actual_result_with_names = sample_df.sum_product('a', 'b')
+        actual_result_with_indexes = sample_df.sum_product(0, 1)
+        actual_result_with_both = sample_df.sum_product(0, 'b')
+        expected_result = (1 * 2) + (4 * 5) + (7 * 8)
+        assert expected_result == actual_result_with_names == actual_result_with_indexes == actual_result_with_both

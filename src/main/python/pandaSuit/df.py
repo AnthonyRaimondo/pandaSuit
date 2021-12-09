@@ -4,13 +4,13 @@ from random import randint
 from copy import copy
 
 import pandas
-from toolbox.list_elements import index_dictionary, create_index_list
 
 from pandaSuit.common.unwind import Unwind
+from pandaSuit.common.util.list_operations import index_dictionary, create_index_list
 from pandaSuit.stats.linear import LinearModel
 from pandaSuit.stats.logistic import LogisticModel
 from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
-from  pandaSuit.common.decorators import reversible
+from pandaSuit.common.decorators import reversible
 
 
 class DF:
@@ -103,46 +103,31 @@ class DF:
             date_group_by_object = self.df.groupby(pandas.to_datetime(self.select(column=column)).dt.strftime(grouping))
             return {date_key: DF(date_group_by_object.get_group(date_key)) for date_key in list(date_group_by_object.groups.keys())}
 
-    def sum_product(self, columns: list) -> int or float:
-        product_column = 1
+    def sum_product(self, *columns: int or str) -> int or float:
+        product_column = pandas.Series([1]*self.row_count)
         for column in columns:
             product_column *= self.select(column=column)
         return product_column.sum()
 
     @reversible
-    def update(self,
-               row: int or str or list = None,
-               column: int or str or list = None,
-               to: object = None,
-               in_place: bool = True) -> DF or None:
+    def update(self, row: int or str = None, column: int or str = None, to: object = None, in_place: bool = True) -> DF or None:
         if in_place:
-            if isinstance(column, str):
-                self.df.loc[create_index_list(self.row_count), column] = to
+            if column is not None:
+                if isinstance(column, str):
+                    self.df.loc[create_index_list(self.row_count), column] = to
+                else:
+                    self.df.iloc[create_index_list(self.row_count), column] = to
+            elif row is not None:
+                if isinstance(row, str):
+                    pass
+                else:
+                    pass
             else:
-                self.df.iloc[create_index_list(self.row_count), column] = to
+                raise Exception("Please supply a row or column to update.")
         else:
             _df = copy(self)
             _df.update(row=row, column=column, to=to, in_place=True)
             return _df
-
-    # # @reversible
-    # def update(self,
-    #            row: int or str or list = None,
-    #            column: int or str or list = None,
-    #            to: object = None,
-    #            in_place: bool = True) -> DF or None:
-    #     if in_place:
-    #         if isinstance(column, str):
-    #             self.df.loc[row, column] = to
-    #         else:
-    #             self.df.iloc[row, column] = to
-    #     else:
-    #         _df = copy(self.df)
-    #         if isinstance(column, str):
-    #             _df.loc[row, column] = to
-    #         else:
-    #             _df.iloc[row, column] = to
-    #         return DF(_df)
 
     def append(self, row: pandas.Series = None, column: pandas.Series = None, in_place: bool = True) -> DF or None:
         if row is not None and column is None:

@@ -2,12 +2,16 @@ from pandaSuit.common.constant.decorators import UPDATE
 
 
 def intermediate_update_args(kwargs):
-    return {"column": kwargs.get("column")}
+    return {
+        "column": kwargs.get("column")
+    }
 
 
 def update_args(kwargs):
-    return {"column": kwargs.get("column"),
-            "to": kwargs.get("to")}
+    return {
+        "column": kwargs.get("column"),
+        "to": kwargs.get("to")
+    }
 
 
 REVERSE_MAPPING = {
