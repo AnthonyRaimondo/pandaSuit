@@ -4,11 +4,13 @@ from random import randint
 from copy import copy
 
 import pandas
-from toolbox.list_elements import index_dictionary
 
-from pandaSuit.linear import LinearModel
-from pandaSuit.logistic import LogisticModel
-from pandaSuit.constant.date_constants import DATE_GROUPINGS
+from pandaSuit.common.unwind import Unwind
+from pandaSuit.common.util.list_operations import index_dictionary, create_index_list
+from pandaSuit.stats.linear import LinearModel
+from pandaSuit.stats.logistic import LogisticModel
+from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
+from pandaSuit.common.decorators import reversible
 
 
 class DF:
@@ -17,6 +19,7 @@ class DF:
             self.df = pandas.DataFrame(data)
         else:
             self.df = pandas.DataFrame()
+        self._unwind = []
 
     def select(self,
                row: list or int or str = None,
@@ -69,7 +72,11 @@ class DF:
         else:
             return LinearModel(dependent=self.select(column=y), independent=self.select(column=x))
 
-    def not_null(self, column: str, pandas_return_type: bool = True) -> pandas.DataFrame:
+    def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
+        result = self.df[self.df[column].isnull()]
+        return result if pandas_return_type else DF(result)
+
+    def where_not_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
         result = self.df[self.df[column].notna()]
         return result if pandas_return_type else DF(result)
 
@@ -96,29 +103,31 @@ class DF:
             date_group_by_object = self.df.groupby(pandas.to_datetime(self.select(column=column)).dt.strftime(grouping))
             return {date_key: DF(date_group_by_object.get_group(date_key)) for date_key in list(date_group_by_object.groups.keys())}
 
-    def sum_product(self, columns: list) -> int or float:
-        product_column = 1
+    def sum_product(self, *columns: int or str) -> int or float:
+        product_column = pandas.Series([1]*self.row_count)
         for column in columns:
             product_column *= self.select(column=column)
         return product_column.sum()
 
-    def update(self,
-               row: int or str or list = None,
-               column: int or str or list = None,
-               to: object = None,
-               in_place: bool = True) -> DF or None:
+    @reversible
+    def update(self, row: int or str = None, column: int or str = None, to: object = None, in_place: bool = True) -> DF or None:
         if in_place:
-            if isinstance(column, str):
-                self.df.at[row, column] = to
+            if column is not None:
+                if isinstance(column, str):
+                    self.df.loc[create_index_list(self.row_count), column] = to
+                else:
+                    self.df.iloc[create_index_list(self.row_count), column] = to
+            elif row is not None:
+                if isinstance(row, str):
+                    pass
+                else:
+                    pass
             else:
-                self.df.iat[row, column] = to
+                raise Exception("Please supply a row or column to update.")
         else:
-            _df = copy(self.df)
-            if isinstance(column, str):
-                _df.at[row, column] = to
-            else:
-                _df.iat[row, column] = to
-            return DF(_df)
+            _df = copy(self)
+            _df.update(row=row, column=column, to=to, in_place=True)
+            return _df
 
     def append(self, row: pandas.Series = None, column: pandas.Series = None, in_place: bool = True) -> DF or None:
         if row is not None and column is None:
@@ -147,6 +156,13 @@ class DF:
         else:
             raise Exception("row or column parameter must be set")
 
+    def undo(self) -> None:
+        """
+        Reverts the most recent change to the Table instance.
+        """
+        unwind_object: Unwind = self._unwind.pop()
+        self.__getattribute__(unwind_object.function)(**unwind_object.args[0])
+
     def _append_row(self, row: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
             self.df.append(row, ignore_index=True)
@@ -162,6 +178,30 @@ class DF:
             _df = copy(self.df)
             _df.insert(self.column_count, column.name, column, True)
             return DF(_df)
+
+    # def undo(self):
+    #     """
+    #     Reverts the most recent change to the Table instance.
+    #     """
+    #     try:
+    #         unwind_object = self._unwind.pop()
+    #         try:
+    #             if isinstance(unwind_object, Unwind):
+    #                 if len(unwind_object.args) > 0:
+    #                     unwind_object.function(unwind_object.args)
+    #                 else:
+    #                     unwind_object.function()
+    #             else:
+    #                 for unwind_step in reversed(unwind_object):
+    #                     if len(unwind_step.args) > 0:
+    #                         unwind_step.function(unwind_step.args)
+    #                     else:
+    #                         unwind_step.function()
+    #             del self._change_log[-1]
+    #         except Exception as e:
+    #             raise Exception(f"Error occurred when attempting to undo step: {self._change_log[-1]}", e)
+    #     except IndexError:
+    #         pass
 
     @staticmethod
     def _names_supplied(selector: int or str or list) -> bool:
