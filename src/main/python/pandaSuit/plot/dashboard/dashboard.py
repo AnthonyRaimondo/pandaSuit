@@ -45,7 +45,7 @@ class Dashboard:
 
     def display(self, pop_out: bool = True) -> None:
         if self._shown:
-            rows, columns = self.layout.df.shape
+            rows, columns = self.layout._df.shape
             self = Dashboard(rows=rows, columns=columns, layout=self.layout, title=self.title, background_color=self.background_color)
             self.display()
         else:

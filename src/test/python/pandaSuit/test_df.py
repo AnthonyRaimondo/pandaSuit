@@ -20,7 +20,7 @@ def sample_df_with_row_names() -> DF:
             {'a': 4, 'b': 5, 'c': 6},
             {'a': 7, 'b': 8, 'c': 9}]
     df = DF(data=data)
-    df.df = df.df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index")
+    df._df = df._df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index")
     return df
 
 
