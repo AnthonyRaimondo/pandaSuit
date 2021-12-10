@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import inspect
+from collections import deque
 from random import randint
 from copy import copy
 
@@ -20,7 +20,7 @@ class DF:
             self._df = pandas.DataFrame(data)
         else:
             self._df = pandas.DataFrame()
-        self._unwind = []
+        self._unwind = deque()
 
     def select(self,
                row: list or int or str = None,
@@ -228,12 +228,13 @@ class DF:
         return len(self._df)
 
     def __setattr__(self, name, value):
-        if not hasattr(self, name) and inspect.stack()[1][3] != "__init__":  # don't raise AttributeError
+        try:
+            super(DF, self).__setattr__(name, value)
+        except AttributeError:  # don't immediately raise AttributeError
             self._df.__setattr__(name, value)  # instead, invoke setter on underlying pandas DataFrame
-        super(DF, self).__setattr__(name, value)
 
     def __getattribute__(self, name):
-        if inspect.stack()[1][3] not in {"__setattr__", "__getattribute__"}:
-            if not hasattr(self, name):  # don't raise AttributeError
-                return self._df.__getattribute__(name)  # instead, invoke getter on underlying pandas DataFrame
-        return super(DF, self).__getattribute__(name)
+        try:
+            return super(DF, self).__getattribute__(name)
+        except AttributeError:  # don't immediately raise AttributeError
+            return self._df.__getattribute__(name)  # instead, invoke getter on underlying pandas DataFrame

@@ -1,4 +1,5 @@
 import functools
+from collections import deque
 from copy import copy
 
 from pandaSuit.common.mappings.reversible import *
@@ -24,6 +25,6 @@ def reversible(func):
                     copy(args[0].__getattribute__(intermediate_reverse_function)(**intermediate_reverse_args))
             })
         reverse_function = REVERSE_MAPPING.get(function_name)
-        args[0].__setattr__(UNWIND_LIST, args[0].__getattribute__(UNWIND_LIST) + [Unwind(reverse_function, reverse_args)])
+        args[0].__setattr__(UNWIND_LIST, args[0].__getattribute__(UNWIND_LIST) + deque([Unwind(reverse_function, reverse_args)]))
         func(*args, **kwargs)
     return wrapper_reverse
