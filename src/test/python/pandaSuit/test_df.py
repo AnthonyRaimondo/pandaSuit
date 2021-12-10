@@ -1,3 +1,4 @@
+from collections import deque
 from copy import copy
 
 import pytest
@@ -20,7 +21,7 @@ def sample_df_with_row_names() -> DF:
             {'a': 4, 'b': 5, 'c': 6},
             {'a': 7, 'b': 8, 'c': 9}]
     df = DF(data=data)
-    df.df = df.df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index")
+    df._df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index", inplace=True)
     return df
 
 
@@ -121,3 +122,25 @@ class TestDF:
         actual_result_with_both = sample_df.sum_product(0, 'b')
         expected_result = (1 * 2) + (4 * 5) + (7 * 8)
         assert expected_result == actual_result_with_names == actual_result_with_indexes == actual_result_with_both
+
+    def test_setattr(self, sample_df):
+        new_value = [1, 2, 3]
+        sample_df.__setattr__("_unwind", new_value)
+        assert sample_df._unwind == new_value
+
+    def test_setattr_fallback(self, sample_df_with_row_names):
+        new_value = ['g', 'h', 'i']
+        sample_df_with_row_names.__setattr__("index", new_value)
+        assert sample_df_with_row_names.index == new_value
+
+    def test_getattribute(self, sample_df):
+        assert sample_df.__getattribute__("_unwind") == deque()
+
+    def test_getattribute_fallback(self, sample_df):
+        new_value = "value"
+        sample_df._df.some_new_field = new_value
+        assert sample_df.__getattribute__("some_new_field") == new_value
+
+    def test_getattribute_fallout(self, sample_df):
+        with pytest.raises(AttributeError):
+            sample_df.__getattribute__("some_non_existent_field")

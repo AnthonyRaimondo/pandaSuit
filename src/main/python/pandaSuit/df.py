@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import deque
 from random import randint
 from copy import copy
 
@@ -16,10 +17,10 @@ from pandaSuit.common.decorators import reversible
 class DF:
     def __init__(self, data=None):
         if data is not None:
-            self.df = pandas.DataFrame(data)
+            self._df = pandas.DataFrame(data)
         else:
-            self.df = pandas.DataFrame()
-        self._unwind = []
+            self._df = pandas.DataFrame()
+        self._unwind = deque()
 
     def select(self,
                row: list or int or str = None,
@@ -27,23 +28,23 @@ class DF:
                pandas_return_type: bool = True) -> pandas.DataFrame or pandas.Series or DF:
         if row is None:
             if self._names_supplied(column):
-                result = self.df[column]
+                result = self._df[column]
             else:
-                result = self.df.iloc[:, column]
+                result = self._df.iloc[:, column]
         else:
             if column is None:
                 if self._names_supplied(row):
-                    result = self.df.loc[row]
+                    result = self._df.loc[row]
                 else:
-                    result = self.df.iloc[row]
+                    result = self._df.iloc[row]
             else:
                 if self._names_supplied(row) and self._names_supplied(column):
-                    result = self.df.loc[row, column]
+                    result = self._df.loc[row, column]
                 else:
                     if self._names_supplied(row):
-                        result = self.df.loc[row].iloc[:, column]
+                        result = self._df.loc[row].iloc[:, column]
                     else:
-                        result = self.df.iloc[row, column]
+                        result = self._df.iloc[row, column]
         if pandas_return_type:
             return result
         else:
@@ -51,20 +52,20 @@ class DF:
 
     def where(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pandas.DataFrame:
         if isinstance(some_value, str):
-            result = self.df[self.df[column_name].str.contains(some_value, na=False)]
+            result = self._df[self._df[column_name].str.contains(some_value, na=False)]
         else:
-            result = self.df.loc[self.df[column_name] == some_value]
+            result = self._df.loc[self._df[column_name] == some_value]
         return result if pandas_return_type else DF(result)
 
     def where_not(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pandas.DataFrame:
         if isinstance(some_value, str):
-            result = self.df[~self.df[column_name].isin([some_value])]
+            result = self._df[~self._df[column_name].isin([some_value])]
         else:
-            result = self.df.loc[self.df[column_name] != some_value]
+            result = self._df.loc[self._df[column_name] != some_value]
         return result if pandas_return_type else DF(result)
 
     def random_row(self) -> pandas.DataFrame:
-        return self.df.iloc[randint(0, self.df.shape[0]-1)]
+        return self._df.iloc[randint(0, self._df.shape[0] - 1)]
 
     def regress(self, y: str or int, x: list or str or int, logit: bool = False) -> LinearModel or LogisticModel:
         if logit:
@@ -73,11 +74,11 @@ class DF:
             return LinearModel(dependent=self.select(column=y), independent=self.select(column=x))
 
     def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
-        result = self.df[self.df[column].isnull()]
+        result = self._df[self._df[column].isnull()]
         return result if pandas_return_type else DF(result)
 
     def where_not_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
-        result = self.df[self.df[column].notna()]
+        result = self._df[self._df[column].notna()]
         return result if pandas_return_type else DF(result)
 
     def group_by(self, column: int or str = None, row: int or str = None, date_grouping: str = None) -> dict:
@@ -100,7 +101,7 @@ class DF:
                 raise Exception(f"Invalid date grouping type \"{date_grouping}\"")
             if column is None:
                 raise Exception("Cannot group on a Row of dates")
-            date_group_by_object = self.df.groupby(pandas.to_datetime(self.select(column=column)).dt.strftime(grouping))
+            date_group_by_object = self._df.groupby(pandas.to_datetime(self.select(column=column)).dt.strftime(grouping))
             return {date_key: DF(date_group_by_object.get_group(date_key)) for date_key in list(date_group_by_object.groups.keys())}
 
     def sum_product(self, *columns: int or str) -> int or float:
@@ -114,9 +115,9 @@ class DF:
         if in_place:
             if column is not None:
                 if isinstance(column, str):
-                    self.df.loc[create_index_list(self.row_count), column] = to
+                    self._df.loc[create_index_list(self.row_count), column] = to
                 else:
-                    self.df.iloc[create_index_list(self.row_count), column] = to
+                    self._df.iloc[create_index_list(self.row_count), column] = to
             elif row is not None:
                 if isinstance(row, str):
                     pass
@@ -146,13 +147,13 @@ class DF:
                     self._append_column(column, in_place)
                     self._append_row(row, in_place)
                 else:
-                    return DF(copy(self.df))._append_column(column, in_place)._append_row(row, in_place)
+                    return DF(copy(self._df))._append_column(column, in_place)._append_row(row, in_place)
             else:
                 if in_place:
                     self._append_row(row, in_place)
                     self._append_column(column, in_place)
                 else:
-                    return DF(copy(self.df))._append_row(row, in_place)._append_column(column, in_place)
+                    return DF(copy(self._df))._append_row(row, in_place)._append_column(column, in_place)
         else:
             raise Exception("row or column parameter must be set")
 
@@ -165,17 +166,17 @@ class DF:
 
     def _append_row(self, row: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
-            self.df.append(row, ignore_index=True)
+            self._df.append(row, ignore_index=True)
         else:
-            _df = copy(self.df)
+            _df = copy(self._df)
             _df.append(row, ignore_index=True)
             return DF(_df)
 
     def _append_column(self, column: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
-            self.df.insert(self.column_count, column.name, column, True)
+            self._df.insert(self.column_count, column.name, column, True)
         else:
-            _df = copy(self.df)
+            _df = copy(self._df)
             _df.insert(self.column_count, column.name, column, True)
             return DF(_df)
 
@@ -212,16 +213,28 @@ class DF:
 
     @property
     def is_empty(self) -> bool:
-        return self.df.empty
+        return self._df.empty
 
     @property
     def rows(self) -> list:
-        return [pandas.Series(row[1]) for row in self.df.iterrows()]
+        return [pandas.Series(row[1]) for row in self._df.iterrows()]
 
     @property
     def column_count(self) -> int:
-        return len(self.df.columns)
+        return len(self._df.columns)
 
     @property
     def row_count(self) -> int:
-        return len(self.df)
+        return len(self._df)
+
+    def __setattr__(self, name, value):
+        try:
+            super(DF, self).__setattr__(name, value)
+        except AttributeError:  # don't immediately raise AttributeError
+            self._df.__setattr__(name, value)  # instead, invoke setter on underlying pandas DataFrame
+
+    def __getattribute__(self, name):
+        try:
+            return super(DF, self).__getattribute__(name)
+        except AttributeError:  # don't immediately raise AttributeError
+            return self._df.__getattribute__(name)  # instead, invoke getter on underlying pandas DataFrame
