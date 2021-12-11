@@ -114,10 +114,16 @@ class DF:
     def update(self, row: int or str = None, column: int or str = None, to: object = None, in_place: bool = True) -> DF or None:
         if in_place:
             if column is not None:
-                if isinstance(column, str):
-                    self._df.loc[create_index_list(self.row_count), column] = to
+                if row is not None:
+                    if isinstance(column, str):
+                        self._df.loc[row, column] = to
+                    else:
+                        self._df.iloc[row, column] = to
                 else:
-                    self._df.iloc[create_index_list(self.row_count), column] = to
+                    if isinstance(column, str):
+                        self._df.loc[create_index_list(self.row_count), column] = to
+                    else:
+                        self._df.iloc[create_index_list(self.row_count), column] = to
             elif row is not None:
                 if isinstance(row, str):
                     pass

@@ -6,21 +6,24 @@ The underlying data structure of a pandaSuit DF object is a pandas DataFrame. An
 The additional features merely augment the core pandas DataFrame, hence a _panda in a suit_.
 
 
-### How to install - [PyPI](https://pypi.org/project/pandaSuit/)
+## How to install - [PyPI](https://pypi.org/project/pandaSuit/)
 ```pip install pandaSuit```
 
 
-### Dependencies
+## Dependencies
 * [pandas](https://github.com/pandas-dev/pandas#where-to-get-it) >=1.3.4
 * [scikit-learn](https://github.com/scikit-learn/scikit-learn#user-installation) >=1.0.1
 
 
-### Examples
-<p>Query DF object by column name</p>
-<img align="left" alt="select-by-column-name" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.jpg?raw=true" title="select-by-column-name" />
-
-<p>Or by index, possibly for rows and columns</p>
-<img alt="select-by-index" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
-
-<p>Equivalent to existing pandas functionality</p>
-<img alt="use-core-pandas-methods" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
+## Examples
+### Manipulation
+#### Update values at specific locations</h4>
+### Querying</h3>
+#### Query DF object by column name</h4>
+<img alt="select-by-column-name" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.PNG?raw=true" title="select-by-column-name" />
+____________________________________________________________________________________________________
+#### Or by index, possibly for rows and columns
+<img alt="select-by-index" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
+____________________________________________________________________________________________________
+#### Equivalent to existing pandas functionality
+<img alt="use-core-pandas-methods" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
