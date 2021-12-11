@@ -14,7 +14,7 @@ The additional features merely augment the core pandas DataFrame, hence a _panda
 * [pandas](https://github.com/pandas-dev/pandas#where-to-get-it) >=1.3.4
 * [scikit-learn](https://github.com/scikit-learn/scikit-learn#user-installation) >=1.0.1
 
-
+____________________________________________________________________________________________________
 ## Examples
 ### _Querying_
 __Query DF object by column name__ <img alt="select-by-column-name" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.PNG?raw=true" title="select-by-column-name" />
