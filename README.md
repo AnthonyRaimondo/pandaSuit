@@ -17,14 +17,14 @@ The additional features merely augment the core pandas DataFrame, hence a _panda
 
 ### Examples
 __<p>Query DF object by column name</p>__
-<img align="left" alt="select-by-column-name" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.jpg?raw=true" title="select-by-column-name" />
+<img align="left" alt="select-by-column-name" border="1" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.jpg?raw=true" title="select-by-column-name" />
 <br>
 <br>
 <br>
 __<p>Or by index, possibly for rows and columns</p>__
-<img alt="select-by-index" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
+<img alt="select-by-index" border="1" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
 <br>
 <br>
 <br>
 __<p>Equivalent to existing pandas functionality</p>__
-<img alt="use-core-pandas-methods" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
+<img alt="use-core-pandas-methods" border="1" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
