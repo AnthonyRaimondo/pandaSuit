@@ -16,7 +16,10 @@ The additional features merely augment the core pandas DataFrame, hence a _panda
 
 
 ### Examples
-__<p>Query DF object by column name</p>__
+<h3>Manipulation</h3>
+__<h4>Update values at specific locations</h4>__
+<h3>Querying</h3>
+__<h4>Query DF object by column name</h4>__
 <img alt="select-by-column-name" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.PNG?raw=true" title="select-by-column-name" />
 ____________________________________________________________________________________________________<br /><br /><br />
 __<p>Or by index, possibly for rows and columns</p>__
