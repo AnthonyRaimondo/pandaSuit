@@ -17,13 +17,13 @@ The additional features merely augment the core pandas DataFrame, hence a _panda
 
 ## Examples
 ### Manipulation
-#### Update values at specific locations</h4>
-### Querying</h3>
-#### Query DF object by column name</h4>
-<img alt="select-by-column-name" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.PNG?raw=true" title="select-by-column-name" />
+#### Update values at specific locations
+### Querying
+#### Query DF object by column name
+<img alt="select-by-column-name" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.PNG?raw=true" title="select-by-column-name" />
 ____________________________________________________________________________________________________
 #### Or by index, possibly for rows and columns
-<img alt="select-by-index" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
+<img alt="select-by-index" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
 ____________________________________________________________________________________________________
 #### Equivalent to existing pandas functionality
-<img alt="use-core-pandas-methods" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
+<img alt="use-core-pandas-methods" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
