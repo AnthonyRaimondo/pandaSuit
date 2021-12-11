@@ -6,7 +6,7 @@ The underlying data structure of a pandaSuit DF object is a pandas DataFrame. An
 The additional features merely augment the core pandas DataFrame, hence a <ins>panda in a suit</ins>.
 
 ### How to install - [PyPI](https://pypi.org/project/pandaSuit/)
-pip install pandaSuit
+```pip install pandaSuit```
 
 ### Dependencies
 * [pandas](https://github.com/pandas-dev/pandas#where-to-get-it) >=1.3.4

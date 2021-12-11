@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name='pandaSuit',
-    version='1.1.0',
+    version='1.1.1',
     packages=find_packages(where='src/main/python', exclude='test'),
     package_dir={'': 'src/main/python'},
     url='https://github.com/AnthonyRaimondo/pandaSuit',
