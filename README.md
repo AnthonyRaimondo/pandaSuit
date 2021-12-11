@@ -23,6 +23,7 @@ __Or by index, possibly for rows and columns__ <img alt="select-by-index" width=
 ____________________________________________________________________________________________________
 __Equivalent to existing pandas functionality__ <img alt="use-core-pandas-methods" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
 ____________________________________________________________________________________________________
+###
 ### _Manipulation_
 __Update values at specific locations__ <img alt="update-specific-location" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/update-specific-location.PNG?raw=true" title="update-specific-location" />
 ____________________________________________________________________________________________________
