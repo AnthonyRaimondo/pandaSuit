@@ -3,7 +3,7 @@ Extension of the [pandas](https://github.com/pandas-dev/pandas#what-is-it) libra
 
 The underlying data structure of a pandaSuit DF object is a pandas DataFrame. An AttributeError thrown while using a pandaSuit DF will fall back to \_\_setattr\_\_ or \_\_getattribute\_\_ on this underlying DataFrame, so a pandaSuit DF object can be treated as a pandas DataFrame.
 
-The additional features merely augment the core pandas DataFrame, hence a <span style="text-decoration: underline">panda in a suit</span>.
+The additional features merely augment the core pandas DataFrame, hence a _panda in a suit_.
 
 ### How to install - [PyPI](https://pypi.org/project/pandaSuit/)
 ```pip install pandaSuit```
