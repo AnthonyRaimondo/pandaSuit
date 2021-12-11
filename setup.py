@@ -2,23 +2,18 @@ import pathlib
 
 from setuptools import setup, find_packages
 
-# The directory containing this file
-HERE = pathlib.Path(__file__).resolve().parent
-
-# The text of the README file is used as a description
-README = (HERE / "README.md").read_text()
 
 setup(
-    name='pandaSuit',
-    version='1.1.0',
-    packages=find_packages(where='src/main/python', exclude='test'),
-    package_dir={'': 'src/main/python'},
-    url='https://github.com/AnthonyRaimondo/pandaSuit',
-    license='MIT',
     author='Anthony Raimondo',
     author_email='anthonyraimondo7@gmail.com',
     description='pandas extension for DataFrame manipulation, statistics, and plotting',
     install_requires=["pandas", "scikit-learn"],
-    long_description=README,
+    license='MIT',
+    long_description=(pathlib.Path(__file__).resolve().parent / "README.md").read_text(),
     long_description_content_type="text/markdown",
+    name='pandaSuit',
+    package_dir={'': 'src/main/python'},
+    packages=find_packages(where='src/main/python', exclude='test'),
+    url='https://github.com/AnthonyRaimondo/pandaSuit',
+    version='1.1.1'
 )
