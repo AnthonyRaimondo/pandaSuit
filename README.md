@@ -17,14 +17,14 @@ The additional features merely augment the core pandas DataFrame, hence a _panda
 
 ## Examples
 ### _Querying_
-Query DF object by column name <img alt="select-by-column-name" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.PNG?raw=true" title="select-by-column-name" />
+__Query DF object by column name__ <img alt="select-by-column-name" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.PNG?raw=true" title="select-by-column-name" />
 ____________________________________________________________________________________________________
-Or by index, possibly for rows and columns <img alt="select-by-index" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
+__Or by index, possibly for rows and columns__ <img alt="select-by-index" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
 ____________________________________________________________________________________________________
-Equivalent to existing pandas functionality <img alt="use-core-pandas-methods" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
+__Equivalent to existing pandas functionality__ <img alt="use-core-pandas-methods" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
 ____________________________________________________________________________________________________
 ### _Manipulation_
-Update values at specific locations <img alt="update-specific-location" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/update-specific-location.PNG?raw=true" title="update-specific-location" />
+__Update values at specific locations__ <img alt="update-specific-location" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/update-specific-location.PNG?raw=true" title="update-specific-location" />
 ____________________________________________________________________________________________________
-Undo changes made to DF object <img alt="undo-DF-manipulation" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/undo-DF-manipulation.PNG?raw=true" title="undo-DF-manipulation" />
+__Undo changes made to DF object__ <img alt="undo-DF-manipulation" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/undo-DF-manipulation.PNG?raw=true" title="undo-DF-manipulation" />
 ____________________________________________________________________________________________________
