@@ -21,9 +21,9 @@ The additional features merely augment the core pandas DataFrame, hence a _panda
 ### Querying</h3>
 #### Query DF object by column name</h4>
 <img alt="select-by-column-name" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.PNG?raw=true" title="select-by-column-name" />
-____________________________________________________________________________________________________<br /><br /><br />
-__<p>Or by index, possibly for rows and columns</p>__
+____________________________________________________________________________________________________
+#### Or by index, possibly for rows and columns
 <img alt="select-by-index" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
-____________________________________________________________________________________________________<br /><br /><br />
-__<p>Equivalent to existing pandas functionality</p>__
+____________________________________________________________________________________________________
+#### Equivalent to existing pandas functionality
 <img alt="use-core-pandas-methods" width="768" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
