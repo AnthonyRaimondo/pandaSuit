@@ -16,11 +16,15 @@ The additional features merely augment the core pandas DataFrame, hence a _panda
 
 
 ### Examples
-<p>Query DF object by column name</p>
+__<p>Query DF object by column name</p>__
 <img align="left" alt="select-by-column-name" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-column-name.jpg?raw=true" title="select-by-column-name" />
 
-<p>Or by index, possibly for rows and columns</p>
+
+
+__<p>Or by index, possibly for rows and columns</p>__
 <img alt="select-by-index" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/select-by-index.PNG?raw=true" title="select-by-index" />
 
-<p>Equivalent to existing pandas functionality</p>
+
+
+__<p>Equivalent to existing pandas functionality</p>__
 <img alt="use-core-pandas-methods" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/use-core-pandas-methods.PNG?raw=true" title="use-core-pandas-methods" />
