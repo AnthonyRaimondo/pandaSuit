@@ -187,30 +187,6 @@ class DF:
             _df.insert(self.column_count, column.name, column, True)
             return DF(_df)
 
-    # def undo(self):
-    #     """
-    #     Reverts the most recent change to the Table instance.
-    #     """
-    #     try:
-    #         unwind_object = self._unwind.pop()
-    #         try:
-    #             if isinstance(unwind_object, Unwind):
-    #                 if len(unwind_object.args) > 0:
-    #                     unwind_object.function(unwind_object.args)
-    #                 else:
-    #                     unwind_object.function()
-    #             else:
-    #                 for unwind_step in reversed(unwind_object):
-    #                     if len(unwind_step.args) > 0:
-    #                         unwind_step.function(unwind_step.args)
-    #                     else:
-    #                         unwind_step.function()
-    #             del self._change_log[-1]
-    #         except Exception as e:
-    #             raise Exception(f"Error occurred when attempting to undo step: {self._change_log[-1]}", e)
-    #     except IndexError:
-    #         pass
-
     @staticmethod
     def _names_supplied(selector: int or str or list) -> bool:
         if isinstance(selector, list):
