@@ -17,6 +17,7 @@ from pandaSuit.stats.logistic import LogisticModel
 
 class DF:
     def __init__(self, data=None):
+        self.data = data
         if data is not None:
             self._df = pandas.DataFrame(data)
         else:
@@ -171,6 +172,9 @@ class DF:
         unwind_object: Unwind = self._unwind.pop()
         self.__getattribute__(unwind_object.function)(**unwind_object.args[0])
 
+    def reset(self) -> None:
+        self._df = DF(data=self.data)._df
+
     def _append_row(self, row: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
             self._df.append(row, ignore_index=True)
@@ -193,6 +197,20 @@ class DF:
             return isinstance(selector[0], str)
         else:
             return isinstance(selector, str)
+
+    @staticmethod
+    def _create_str_column_names(columns: int) -> list:
+        letters, headers = [letter for letter in ALPHABET], []
+        for column_index in range(columns):
+            cycles = column_index // len(letters)
+            if cycles == 0:
+                headers.append(letters[column_index])
+            elif cycles <= len(letters):
+                headers.append(letters[cycles - 1] + letters[column_index % len(letters)])
+            else:
+                headers.append(letters[(cycles // len(letters)) - 1] + letters[(cycles % len(letters)) - 1] + letters[
+                    column_index % len(letters)])
+        return headers
 
     @property
     def is_empty(self) -> bool:
@@ -264,19 +282,6 @@ class RandomDF(DF):
 
     # Static methods
     @staticmethod
-    def _create_str_column_names(columns: int) -> list or None:
-        letters, headers = [letter for letter in ALPHABET], []
-        for column_index in range(columns):
-            cycles = column_index // len(letters)
-            if cycles == 0:
-                headers.append(letters[column_index])
-            elif cycles <= len(letters):
-                headers.append(letters[cycles-1]+letters[column_index % len(letters)])
-            else:
-                headers.append(letters[(cycles//len(letters))-1]+letters[(cycles % len(letters))-1]+letters[column_index % len(letters)])
-        return headers
-
-    @staticmethod
     def _get_random_data_point(data_type: type, distribution: str) -> object:
         if data_type is str:
             return np_random.choice([letter for letter in ALPHABET])
@@ -289,3 +294,17 @@ class RandomDF(DF):
             return None
         else:
             raise TypeError(f"Invalid type for RandomDF values {data_type}")
+
+
+class EmptyDF(DF):
+    def __init__(self,
+                 number_of_rows: int = None,
+                 number_of_columns: int = None):
+        self.number_of_rows = number_of_rows
+        self.number_of_columns = number_of_columns
+        data = {}
+        if number_of_columns is not None:
+            column_names = self._create_str_column_names(number_of_columns)
+            for column_count in range(self.number_of_columns):
+                data[column_names[column_count]] = [None for _ in range(self.number_of_rows)]
+        super().__init__(data=data)
