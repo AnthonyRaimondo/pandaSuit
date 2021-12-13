@@ -308,6 +308,3 @@ class EmptyDF(DF):
             for column_count in range(self.number_of_columns):
                 data[column_names[column_count]] = [None for _ in range(self.number_of_rows)]
         super().__init__(data=data)
-
-    def reset(self):
-        self._df = EmptyDF(number_of_rows=self.number_of_rows, number_of_columns=self.number_of_columns)._df
