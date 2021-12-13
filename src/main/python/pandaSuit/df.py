@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from collections import deque
-from random import randint
 from copy import copy
 
 import pandas
+from numpy import random as np_random
 
+from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
+from pandaSuit.common.constant.df import ALPHABET, DISTRIBUTIONS
+from pandaSuit.common.decorators import reversible
 from pandaSuit.common.unwind import Unwind
 from pandaSuit.common.util.list_operations import index_dictionary, create_index_list
 from pandaSuit.stats.linear import LinearModel
 from pandaSuit.stats.logistic import LogisticModel
-from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
-from pandaSuit.common.decorators import reversible
 
 
 class DF:
@@ -65,7 +66,7 @@ class DF:
         return result if pandas_return_type else DF(result)
 
     def random_row(self) -> pandas.DataFrame:
-        return self._df.iloc[randint(0, self._df.shape[0] - 1)]
+        return self._df.iloc[np_random.randint(0, self._df.shape[0] - 1)]
 
     def regress(self, y: str or int, x: list or str or int, logit: bool = False) -> LinearModel or LogisticModel:
         if logit:
@@ -186,30 +187,6 @@ class DF:
             _df.insert(self.column_count, column.name, column, True)
             return DF(_df)
 
-    # def undo(self):
-    #     """
-    #     Reverts the most recent change to the Table instance.
-    #     """
-    #     try:
-    #         unwind_object = self._unwind.pop()
-    #         try:
-    #             if isinstance(unwind_object, Unwind):
-    #                 if len(unwind_object.args) > 0:
-    #                     unwind_object.function(unwind_object.args)
-    #                 else:
-    #                     unwind_object.function()
-    #             else:
-    #                 for unwind_step in reversed(unwind_object):
-    #                     if len(unwind_step.args) > 0:
-    #                         unwind_step.function(unwind_step.args)
-    #                     else:
-    #                         unwind_step.function()
-    #             del self._change_log[-1]
-    #         except Exception as e:
-    #             raise Exception(f"Error occurred when attempting to undo step: {self._change_log[-1]}", e)
-    #     except IndexError:
-    #         pass
-
     @staticmethod
     def _names_supplied(selector: int or str or list) -> bool:
         if isinstance(selector, list):
@@ -244,3 +221,71 @@ class DF:
             return super(DF, self).__getattribute__(name)
         except AttributeError:  # don't immediately raise AttributeError
             return self._df.__getattribute__(name)  # instead, invoke getter on underlying pandas DataFrame
+
+
+class RandomDF(DF):
+    def __init__(self,
+                 rows: int = None,
+                 columns: int = None,
+                 data_type: type = float,
+                 distribution: str = 'uniform'):
+        """
+        todo: add summary of class
+        :param rows: Number of rows to create RandomDF with. If None, a random number of rows between 5 and 200 will be chosen
+        :param columns: Number of columns to create RandomDF with. If None, a random number of columns between 5 and 200 will be chosen
+        :param data_type: Type of random object to create and populate DF with. Options are float (default), int, and str
+        :param distribution: Type of distribution to draw random numbers from (ignored if data_type=str. Options are uniform (default) and normal
+        """
+        if rows is None:
+            rows = np_random.randint(5, 200)
+        if columns is None:
+            columns = np_random.randint(5, 200)
+        self.number_of_rows = rows
+        self.number_of_columns = columns
+        self.data_type = data_type
+        self.distribution = distribution
+        column_names = self._create_str_column_names(columns)
+        data = {}
+        for column_count in range(self.number_of_columns):
+            data[column_names[column_count]] = []
+            for _ in range(self.number_of_rows):
+                data[column_names[column_count]].append(self._get_random_data_point(data_type, distribution))
+        super().__init__(data=data)
+
+    def regenerate(self,
+                   number_of_rows: int = None,
+                   number_of_columns: int = None,
+                   data_type: type = None,
+                   distribution: str = None) -> None:
+        self._df = RandomDF(rows=number_of_rows if number_of_rows is not None else self.number_of_rows,
+                            columns=number_of_columns if number_of_columns is not None else self.number_of_columns,
+                            data_type=data_type if data_type is not None else self.data_type,
+                            distribution=distribution if distribution is not None else self.distribution)._df
+
+    # Static methods
+    @staticmethod
+    def _create_str_column_names(columns: int) -> list or None:
+        letters, headers = [letter for letter in ALPHABET], []
+        for column_index in range(columns):
+            cycles = column_index // len(letters)
+            if cycles == 0:
+                headers.append(letters[column_index])
+            elif cycles <= len(letters):
+                headers.append(letters[cycles-1]+letters[column_index % len(letters)])
+            else:
+                headers.append(letters[(cycles//len(letters))-1]+letters[(cycles % len(letters))-1]+letters[column_index % len(letters)])
+        return headers
+
+    @staticmethod
+    def _get_random_data_point(data_type: type, distribution: str) -> object:
+        if data_type is str:
+            return np_random.choice([letter for letter in ALPHABET])
+        elif data_type in {float, int}:
+            if distribution not in DISTRIBUTIONS:
+                raise ValueError(f"Cannot draw random number from {distribution} distribution. "
+                                 f"Available distributions include {DISTRIBUTIONS}")
+            return data_type(np_random.__getattribute__(distribution)())
+        elif data_type is None:
+            return None
+        else:
+            raise TypeError(f"Invalid type for RandomDF values {data_type}")
