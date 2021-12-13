@@ -6,13 +6,13 @@ from copy import copy
 import pandas
 from numpy import random as np_random
 
-from pandaSuit.common.constant.df import ALPHABET
+from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
+from pandaSuit.common.constant.df import ALPHABET, DISTRIBUTIONS
+from pandaSuit.common.decorators import reversible
 from pandaSuit.common.unwind import Unwind
 from pandaSuit.common.util.list_operations import index_dictionary, create_index_list
 from pandaSuit.stats.linear import LinearModel
 from pandaSuit.stats.logistic import LogisticModel
-from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
-from pandaSuit.common.decorators import reversible
 
 
 class DF:
@@ -268,15 +268,19 @@ class RandomDF(DF):
         self.number_of_columns = columns
         self.data_type = data_type
         self.distribution = distribution
-        columns_names = self._create_str_column_names(columns)
+        column_names = self._create_str_column_names(columns)
         data = {}
+        for column_count in range(self.number_of_columns):
+            data[column_names[column_count]] = []
+            for _ in range(self.number_of_rows):
+                data[column_names[column_count]].append(self._get_random_data_point(data_type, distribution))
         super().__init__(data=data)
 
     def regenerate(self,
                    number_of_rows: int = None,
                    number_of_columns: int = None,
                    data_type: type = None,
-                   distribution: str = None):
+                   distribution: str = None) -> None:
         self._df = RandomDF(rows=number_of_rows if number_of_rows is not None else self.number_of_rows,
                             columns=number_of_columns if number_of_columns is not None else self.number_of_columns,
                             data_type=data_type if data_type is not None else self.data_type,
@@ -293,17 +297,18 @@ class RandomDF(DF):
             elif cycles <= len(letters):
                 headers.append(letters[cycles-1]+letters[column_index % len(letters)])
             else:
-                headers.append(letters[(cycles // len(letters)) - 1]+letters[(cycles % len(letters)) - 1]+letters[column_index % len(letters)])
+                headers.append(letters[(cycles//len(letters))-1]+letters[(cycles % len(letters))-1]+letters[column_index % len(letters)])
         return headers
 
     @staticmethod
     def _get_random_data_point(data_type: type, distribution: str) -> object:
-        if data_type is int:
-            return np_random.randint(0, 99)
-        elif data_type is float:
-            return round(distributions.get(distribution)(), 4)
-        elif data_type is str:
+        if data_type is str:
             return np_random.choice([letter for letter in ALPHABET])
+        elif data_type in {float, int}:
+            if distribution not in DISTRIBUTIONS:
+                raise ValueError(f"Cannot draw random number from {distribution} distribution. "
+                                 f"Available distributions include {DISTRIBUTIONS}")
+            return data_type(np_random.__getattribute__(distribution)())
         elif data_type is None:
             return None
         else:
