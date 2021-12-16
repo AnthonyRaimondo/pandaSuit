@@ -11,6 +11,12 @@ from pandaSuit.common.constant.df import ALPHABET, DISTRIBUTIONS
 from pandaSuit.common.decorators import reversible
 from pandaSuit.common.unwind import Unwind
 from pandaSuit.common.util.list_operations import index_dictionary, create_index_list
+from pandaSuit.plot.bar import BarPlot
+from pandaSuit.plot.histogram import Histogram
+from pandaSuit.plot.line import LinePlot
+from pandaSuit.plot.pie import PiePlot
+from pandaSuit.plot.plot import Plot
+from pandaSuit.plot.scatter import ScatterPlot
 from pandaSuit.stats.linear import LinearModel
 from pandaSuit.stats.logistic import LogisticModel
 
@@ -74,6 +80,61 @@ class DF:
             return LogisticModel(dependent=self.select(column=y), independent=self.select(column=x))
         else:
             return LinearModel(dependent=self.select(column=y), independent=self.select(column=x))
+
+    # Plotting
+    def line_plot(self, *y: int or str, x: int or str or list = None) -> LinePlot:
+        """
+        Creates a Line Plot with y as response variable(s) and x as explanatory variable.
+        :param y: Column name(s)/index(es) of response variable(s)
+        :param x: Column name/index of explanatory variable
+        :return: LinePlot with y as response variable(s) and x as explanatory variable.
+        """
+        return LinePlot(x=self.select(column=x) if x is not None else self.row_names,
+                        y=[pandas.Series(column[1]) for column in self.select(column=list(y)).iteritems()],
+                        y_label=y[0] if len(y) == 1 and isinstance(y[0], str) else None,
+                        x_label=x if isinstance(x, str) else None)
+
+    def bar_plot(self, *bars: int or str, x: int or str or list = None) -> BarPlot:
+        """
+        Creates a Bar Plot with y as response variable(s) and x as explanatory variable.
+        :param bars: Column name(s)/index(es) of response variable(s)
+        :param x: Column name/index of explanatory variable
+        :return: BarPlot with y as response variable(s) and x as explanatory variable.
+        """
+        return BarPlot(x=self.select(column=x) if x is not None else self.row_names if len(bars) > 0 else self.column_names,
+                       y=[pandas.Series(column[1]) for column in self.select(column=list(bars)).iteritems()] if len(bars) > 0 else [self._df.sum()],
+                       y_label=bars[0] if len(bars) == 1 and isinstance(bars[0], str) else None,
+                       x_label=x if isinstance(x, str) else None)
+
+    def pie_plot(self, *slices) -> PiePlot:
+        """
+        Creates a Pie Plot for the slice(s) specified.
+        :param slices: Column name(s)/index(es) to use for PiePlot sections
+        :return: PiePlot for the slice(s) specified.
+        """
+        if len(slices) > 1:
+            return PiePlot(self.select(column=list(slices)).sum().to_dict())
+        elif len(slices) == 0:
+            return PiePlot(self._df.sum().to_dict())
+        else:
+            return PiePlot(self.select(column=slices[0]).value_counts().to_dict())
+
+    def scatter_plot(self, *y: int or str, x: int or str or list = None, best_fit_line: bool = False) -> ScatterPlot:
+        """
+        Creates a Scatter Plot with y as response variable(s) and x as explanatory variable.
+        :param y: Column name(s)/index(es) of response variable(s)
+        :param x: Column name/index of explanatory variable
+        :param best_fit_line: flag indicating whether or not to include a best fit line in the ScatterPlot
+        :return: ScatterPlot with y as response variable(s) and x as explanatory variable.
+        """
+        return ScatterPlot(x=self.select(column=x) if x is not None else self.row_names,
+                           y=[pandas.Series(column[1]) for column in self.select(column=list(y)).iteritems()],
+                           y_label=y[0] if len(y) == 1 and isinstance(y[0], str) else None,
+                           x_label=x if isinstance(x, str) else None,
+                           best_fit_line=best_fit_line)
+
+    def histogram(self, y: int or str) -> Histogram:
+        return Histogram(y=self.select(column=y))
 
     def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
         result = self._df[self._df[column].isnull()]
@@ -221,12 +282,20 @@ class DF:
         return [pandas.Series(row[1]) for row in self._df.iterrows()]
 
     @property
-    def column_count(self) -> int:
-        return len(self._df.columns)
+    def row_names(self):
+        return [row.name for row in self.rows]
 
     @property
     def row_count(self) -> int:
         return len(self._df)
+
+    @property
+    def column_names(self) -> list:
+        return list(self._df.columns)
+
+    @property
+    def column_count(self) -> int:
+        return len(self._df.columns)
 
     def __setattr__(self, name, value):
         try:
