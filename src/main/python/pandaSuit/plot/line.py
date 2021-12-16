@@ -52,7 +52,8 @@ class LinePlot(Plot):
             plt.show()
 
     def create_plot(self) -> None:
-        self.axes.plot(self.x.to_list(), self.y.to_list(), label=self.y.name)
+        for y in self.y:
+            self.axes.plot(self.x.to_list(), y.to_list(), label=y.name)
         self._add_chart_features()
 
     def _add_chart_features(self) -> None:

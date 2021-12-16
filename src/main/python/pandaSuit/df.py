@@ -86,7 +86,7 @@ class DF:
         :return: LinePlot with y as response variable(s) and x as explanatory variable.
         """
         return LinePlot(x=self.select(column=x) if x is not None else self.row_names,
-                        y=self.select(column=list(y)).columns,
+                        y=[pandas.Series(column[1]) for column in self.select(column=list(y)).iteritems()],
                         y_label=y[0] if len(y) == 1 and isinstance(y[0], str) else None,
                         x_label=x if isinstance(x, str) else None)
 
