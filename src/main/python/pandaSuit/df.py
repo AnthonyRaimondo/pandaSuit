@@ -11,6 +11,8 @@ from pandaSuit.common.constant.df import ALPHABET, DISTRIBUTIONS
 from pandaSuit.common.decorators import reversible
 from pandaSuit.common.unwind import Unwind
 from pandaSuit.common.util.list_operations import index_dictionary, create_index_list
+from pandaSuit.plot.line import LinePlot
+from pandaSuit.plot.plot import Plot
 from pandaSuit.stats.linear import LinearModel
 from pandaSuit.stats.logistic import LogisticModel
 
@@ -74,6 +76,19 @@ class DF:
             return LogisticModel(dependent=self.select(column=y), independent=self.select(column=x))
         else:
             return LinearModel(dependent=self.select(column=y), independent=self.select(column=x))
+
+    # Plotting
+    def line_plot(self, *y: int or str, x: int or str or list = None) -> LinePlot:
+        """
+        Creates a Line Plot with y as response variable(s) and x as explanatory variable.
+        :param y: Column name(s)/index(es) of response variable(s)
+        :param x: Column name/index of explanatory variable
+        :return: LinePlot with y as response variable(s) and x as explanatory variable.
+        """
+        return LinePlot(x=self.select(column=x) if x is not None else self.row_names,
+                        y=self.select(column=list(y)).columns,
+                        y_label=y[0] if len(y) == 1 and isinstance(y[0], str) else None,
+                        x_label=x if isinstance(x, str) else None)
 
     def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
         result = self._df[self._df[column].isnull()]
@@ -221,12 +236,20 @@ class DF:
         return [pandas.Series(row[1]) for row in self._df.iterrows()]
 
     @property
-    def column_count(self) -> int:
-        return len(self._df.columns)
+    def row_names(self):
+        return [row.name for row in self.rows]
 
     @property
     def row_count(self) -> int:
         return len(self._df)
+
+    @property
+    def column_names(self) -> list:
+        return list(self._df.columns)
+
+    @property
+    def column_count(self) -> int:
+        return len(self._df.columns)
 
     def __setattr__(self, name, value):
         try:
