@@ -133,8 +133,8 @@ class DF:
                            x_label=x if isinstance(x, str) else None,
                            best_fit_line=best_fit_line)
 
-    def histogram(self, y: int or str) -> Histogram:
-        return Histogram(y=self.select(column=y))
+    def histogram(self, y: int or str, bins: int = 10) -> Histogram:
+        return Histogram(y=self.select(column=y), bins=bins)
 
     def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
         result = self._df[self._df[column].isnull()]
@@ -238,18 +238,18 @@ class DF:
 
     def _append_row(self, row: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
-            self._df.append(row, ignore_index=True)
+            self._df = self._df.append(other=row, ignore_index=True)
         else:
             _df = copy(self._df)
-            _df.append(row, ignore_index=True)
+            _df.append(other=row, ignore_index=True)
             return DF(_df)
 
     def _append_column(self, column: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
-            self._df.insert(self.column_count, column.name, column, True)
+            self._df.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
         else:
             _df = copy(self._df)
-            _df.insert(self.column_count, column.name, column, True)
+            _df.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
             return DF(_df)
 
     @staticmethod
@@ -296,6 +296,10 @@ class DF:
     @property
     def column_count(self) -> int:
         return len(self._df.columns)
+
+    @property
+    def shape(self) -> tuple:
+        return self._df.shape
 
     def __setattr__(self, name, value):
         try:
@@ -368,12 +372,16 @@ class RandomDF(DF):
 class EmptyDF(DF):
     def __init__(self,
                  number_of_rows: int = None,
-                 number_of_columns: int = None):
+                 number_of_columns: int = None,
+                 column_headers: bool = True):
         self.number_of_rows = number_of_rows
         self.number_of_columns = number_of_columns
         data = {}
         if number_of_columns is not None:
-            column_names = self._create_str_column_names(number_of_columns)
-            for column_count in range(self.number_of_columns):
-                data[column_names[column_count]] = [None for _ in range(self.number_of_rows)]
+            if column_headers:
+                column_names = self._create_str_column_names(number_of_columns)
+                for column_count in range(self.number_of_columns):
+                    data[column_names[column_count]] = [None for _ in range(self.number_of_rows)]
+            else:
+                data = [[None for _ in range(number_of_columns)] for _ in range(number_of_rows)]
         super().__init__(data=data)
