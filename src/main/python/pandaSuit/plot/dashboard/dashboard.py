@@ -3,7 +3,7 @@ import tkinter
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pandas import Series
 
-from pandaSuit.df import DF
+from pandaSuit.df import DF, EmptyDF
 from pandaSuit.plot.dashboard.tile import Tile
 from pandaSuit.plot.plot import Plot
 
@@ -16,10 +16,12 @@ class Dashboard:
                  layout: DF = None,
                  title: str = "",
                  background_color: str = "white"):
-        self.layout = layout if layout is not None else DF([[None for _ in range(columns)] for _ in range(rows)])
+        self.layout = layout if layout is not None else EmptyDF(number_of_rows=rows, number_of_columns=columns, column_headers=False)
         self.title = title
         self.background_color = background_color
-        self.dashboard = root if root is not None else tkinter.Tk()
+        self.root = root if root is not None else tkinter.Tk()
+        self.root.withdraw()
+        self.dashboard = tkinter.Toplevel(self.root)
         self.dashboard.config(bg=self.background_color)
         try:
             self.dashboard.title(self.title)
@@ -45,7 +47,7 @@ class Dashboard:
 
     def display(self, pop_out: bool = True) -> None:
         if self._shown:
-            rows, columns = self.layout._df.shape
+            rows, columns = self.layout.shape
             self = Dashboard(rows=rows, columns=columns, layout=self.layout, title=self.title, background_color=self.background_color)
             self.display()
         else:
@@ -59,17 +61,19 @@ class Dashboard:
                 row_count += 1
             self._shown = True
             if pop_out:
-                self.dashboard.mainloop()
-                self.grab_set()
+                self.dashboard.protocol("WM_DELETE_WINDOW", self.on_closing)
+                self.dashboard.grab_set()
+                self.root.mainloop()
+
+    def on_closing(self):
+        self.dashboard.grab_release()
+        self.root.destroy()
 
     def add_row(self, columns: int = None) -> None:
         pass
 
     def add_column(self, rows: int = None) -> None:
         pass
-
-    def grab_set(self):
-        self.dashboard.grab_set()
 
     # Private methods
     def _next_available_position(self) -> tuple:
@@ -86,6 +90,6 @@ class Dashboard:
 
     def _augment_underlying_table(self) -> None:
         if self.layout.column_count > self.layout.row_count:
-            self.layout.append(row=Series([None] * self.layout.column_count), in_place=True)
+            self.layout.append(row=Series(name=self.layout.row_count, data=[None] * self.layout.column_count), in_place=True)
         else:
-            self.layout.append(column=Series([None] * self.layout.row_count), in_place=True)
+            self.layout.append(column=Series(name=self.layout.column_count, data=[None] * self.layout.row_count), in_place=True)
