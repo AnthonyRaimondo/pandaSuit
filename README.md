@@ -13,6 +13,7 @@ The additional features merely augment the core pandas DataFrame, hence a _panda
 ## Dependencies
 * [pandas](https://github.com/pandas-dev/pandas#where-to-get-it) >=1.3.4
 * [scikit-learn](https://github.com/scikit-learn/scikit-learn#user-installation) >=1.0.1
+* [matplotlib](https://github.com/matplotlib/matplotlib#install) >=3.5.1
 
 ____________________________________________________________________________________________________
 ## Examples

@@ -19,8 +19,9 @@ class Dashboard:
         self.layout = layout if layout is not None else EmptyDF(number_of_rows=rows, number_of_columns=columns, column_headers=False)
         self.title = title
         self.background_color = background_color
-        self.dashboard = root if root is not None else tkinter.Tk()
-        self.dashboard.withdraw()
+        self.root = root if root is not None else tkinter.Tk()
+        self.root.withdraw()
+        self.dashboard = tkinter.Toplevel(self.root)
         self.dashboard.config(bg=self.background_color)
         try:
             self.dashboard.title(self.title)
@@ -60,17 +61,19 @@ class Dashboard:
                 row_count += 1
             self._shown = True
             if pop_out:
-                self.dashboard.mainloop()
-                self.grab_set()
+                self.dashboard.protocol("WM_DELETE_WINDOW", self.on_closing)
+                self.dashboard.grab_set()
+                self.root.mainloop()
+
+    def on_closing(self):
+        self.dashboard.grab_release()
+        self.root.destroy()
 
     def add_row(self, columns: int = None) -> None:
         pass
 
     def add_column(self, rows: int = None) -> None:
         pass
-
-    def grab_set(self):
-        self.dashboard.grab_set()
 
     # Private methods
     def _next_available_position(self) -> tuple:
