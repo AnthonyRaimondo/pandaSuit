@@ -10,6 +10,7 @@ from pandaSuit.plot.plot import Plot
 
 class Dashboard:
     def __init__(self,
+                 *plots,
                  root: tkinter.Tk = None,
                  rows: int = 1,
                  columns: int = 1,
@@ -17,6 +18,8 @@ class Dashboard:
                  title: str = "",
                  background_color: str = "white"):
         self.layout = layout if layout is not None else EmptyDF(number_of_rows=rows, number_of_columns=columns, column_headers=False)
+        for plot in plots:
+            self.add_plot(plot)
         self.title = title
         self.background_color = background_color
         self.root = root if root is not None else tkinter.Tk()
@@ -31,7 +34,7 @@ class Dashboard:
 
     def add_plot(self, plot: Plot, row: int = None, column: int = None) -> None:
         if row is not None and column is not None:
-            if self.layout.select(row=row, column=column) is None:
+            if self.layout.select(row=row, column=column, pandas_return_type=True) is None:
                 self.layout.update(row=row, column=column, to=Tile(plot))
             else:
                 raise Exception(f"There is already a Dashboard Tile placed at position row={row} column={column}")
@@ -85,10 +88,10 @@ class Dashboard:
                     return row_count, column_count
                 column_count += 1
             row_count += 1
-        self._augment_underlying_table()
+        self._augment_layout()
         return self._next_available_position()
 
-    def _augment_underlying_table(self) -> None:
+    def _augment_layout(self) -> None:
         if self.layout.column_count > self.layout.row_count:
             self.layout.append(row=Series(name=self.layout.row_count, data=[None] * self.layout.column_count), in_place=True)
         else:
