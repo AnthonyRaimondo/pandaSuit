@@ -10,12 +10,11 @@ from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
 from pandaSuit.common.constant.df import ALPHABET, DISTRIBUTIONS
 from pandaSuit.common.decorators import reversible
 from pandaSuit.common.unwind import Unwind
-from pandaSuit.common.util.list_operations import index_dictionary, create_index_list
+from pandaSuit.common.util.list_operations import index_dictionary, create_index_list, find_indexes
 from pandaSuit.plot.bar import BarPlot
 from pandaSuit.plot.histogram import Histogram
 from pandaSuit.plot.line import LinePlot
 from pandaSuit.plot.pie import PiePlot
-from pandaSuit.plot.plot import Plot
 from pandaSuit.plot.scatter import ScatterPlot
 from pandaSuit.stats.linear import LinearModel
 from pandaSuit.stats.logistic import LogisticModel
@@ -33,7 +32,7 @@ class DF:
     def select(self,
                row: list or int or str = None,
                column: list or int or str = None,
-               pandas_return_type: bool = True) -> pandas.DataFrame or pandas.Series or DF:
+               pandas_return_type: bool = False) -> pandas.DataFrame or pandas.Series or DF:
         if row is None:
             if self._names_supplied(column):
                 result = self._df[column]
@@ -53,10 +52,32 @@ class DF:
                         result = self._df.loc[row].iloc[:, column]
                     else:
                         result = self._df.iloc[row, column]
-        if pandas_return_type:
-            return result
-        else:
-            return DF(result)
+        return result if pandas_return_type else DF(result)
+
+    def slice(self,
+              from_row: int or str = 0,
+              to_row: int or str = -1,
+              from_column: int or str = 0,
+              to_column: int or str = -1,
+              pandas_return_type: bool = False) -> pandas.DataFrame or pandas.Series or DF:
+
+        if isinstance(from_row, str):
+            from_row = find_indexes(self.row_names, from_row)[0]
+        if isinstance(to_row, str):
+            to_row = find_indexes(self.row_names, to_row)[0]
+        if isinstance(from_column, str):
+            from_column = find_indexes(self.column_names, from_column)[0]
+        if isinstance(to_column, str):
+            to_column = find_indexes(self.column_names, to_column)[0]
+
+        if to_row < 0:
+            to_row += self.row_count + 1
+        if to_column < 0:
+            to_column += self.column_count + 1
+
+        result = self._df.iloc[from_row:to_row, from_column:to_column]
+
+        return result if pandas_return_type else DF(result)
 
     def where(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pandas.DataFrame:
         if isinstance(some_value, str):
