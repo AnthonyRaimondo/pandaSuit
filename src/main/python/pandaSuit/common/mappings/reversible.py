@@ -3,7 +3,8 @@ from pandaSuit.common.constant.decorators import UPDATE
 
 def intermediate_update_args(kwargs):
     return {
-        "column": kwargs.get("column")
+        "column": kwargs.get("column"),
+        "pandas_return_type": True
     }
 
 
