@@ -30,3 +30,11 @@ __Update values at specific locations__ <img alt="update-specific-location" widt
 ____________________________________________________________________________________________________
 __Undo changes made to DF object__ <img alt="undo-DF-manipulation" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/undo-DF-manipulation.PNG?raw=true" title="undo-DF-manipulation" />
 ____________________________________________________________________________________________________
+#
+### _Visualization_
+__Create plots from DF objects__ <img alt="create-a-plot" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/create-a-plot.PNG?raw=true" title="create-a-plot" />
+____________________________________________________________________________________________________
+__Make dashboards with multiple plots__ <img alt="create-a-dashboard" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/create-a-dashboard.PNG?raw=true" title="create-a-dashboard" />
+____________________________________________________________________________________________________
+__Add new plots to a dashboard__ <img alt="add-to-dashboard" width="700" src="https://github.com/AnthonyRaimondo/pandaSuit/raw/main/static/examples/add-to-dashboard.PNG?raw=true" title="add-to-dashboard" />
+____________________________________________________________________________________________________
