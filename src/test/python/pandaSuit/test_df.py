@@ -15,6 +15,14 @@ def sample_df() -> DF:
     return DF(data=data)
 
 
+@pytest.fixture(scope="module")
+def static_df() -> DF:
+    data = [{'a': 1, 'b': 2, 'c': 3},
+            {'a': 4, 'b': 5, 'c': 6},
+            {'a': 7, 'b': 8, 'c': 9}]
+    return DF(data=data)
+
+
 @pytest.fixture(scope="function")
 def sample_df_with_row_names() -> DF:
     data = [{'a': 1, 'b': 2, 'c': 3},
@@ -29,10 +37,10 @@ class TestDF:
 
     def test_select_by_index(self, sample_df: DF):
         result = sample_df.select(row=0)
-        assert result.shape == (3,)
+        assert result.shape == (3, 1)
 
         result = sample_df.select(column=0)
-        assert result.shape == (3,)
+        assert result.shape == (3, 1)
 
         result = sample_df.select(row=[0, 1])
         assert result.shape == (2, 3)
@@ -46,12 +54,31 @@ class TestDF:
         result = sample_df.select(row=[0, 1], column=[0, 1])
         assert result.shape == (2, 2)
 
-    def test_select_by_name(self, sample_df_with_row_names: DF):
-        result = sample_df_with_row_names.select(row='d')
+    def test_select_by_index__pandas_return(self, sample_df: DF):
+        result = sample_df.select(row=0, pandas_return_type=True)
         assert result.shape == (3,)
 
-        result = sample_df_with_row_names.select(column='a')
+        result = sample_df.select(column=0, pandas_return_type=True)
         assert result.shape == (3,)
+
+        result = sample_df.select(row=[0, 1], pandas_return_type=True)
+        assert result.shape == (2, 3)
+
+        result = sample_df.select(column=[0, 1], pandas_return_type=True)
+        assert result.shape == (3, 2)
+
+        result = sample_df.select(row=0, column=0, pandas_return_type=True)
+        assert result == 1
+
+        result = sample_df.select(row=[0, 1], column=[0, 1], pandas_return_type=True)
+        assert result.shape == (2, 2)
+
+    def test_select_by_name(self, sample_df_with_row_names: DF):
+        result = sample_df_with_row_names.select(row='d')
+        assert result.shape == (3, 1)
+
+        result = sample_df_with_row_names.select(column='a')
+        assert result.shape == (3, 1)
 
         result = sample_df_with_row_names.select(row=['d', 'e'])
         assert result.shape == (2, 3)
@@ -65,6 +92,25 @@ class TestDF:
         result = sample_df_with_row_names.select(row=['d', 'e'], column=['a', 'b'])
         assert result.shape == (2, 2)
 
+    def test_select_by_name__pandas_return(self, sample_df_with_row_names: DF):
+        result = sample_df_with_row_names.select(row='d', pandas_return_type=True)
+        assert result.shape == (3,)
+
+        result = sample_df_with_row_names.select(column='a', pandas_return_type=True)
+        assert result.shape == (3,)
+
+        result = sample_df_with_row_names.select(row=['d', 'e'], pandas_return_type=True)
+        assert result.shape == (2, 3)
+
+        result = sample_df_with_row_names.select(column=['a', 'b'], pandas_return_type=True)
+        assert result.shape == (3, 2)
+
+        result = sample_df_with_row_names.select(row='d', column='a', pandas_return_type=True)
+        assert result == 1
+
+        result = sample_df_with_row_names.select(row=['d', 'e'], column=['a', 'b'], pandas_return_type=True)
+        assert result.shape == (2, 2)
+
     # def test_update_row_in_place_by_index(self, sample_df: DF):
     #     row = 1
     #     new_row = Series([7, 8, 9])
@@ -74,15 +120,14 @@ class TestDF:
 
     def test_update_column_in_place_by_index(self, sample_df: DF):
         column_index = 1
-        old_column = copy(sample_df.select(column=column_index))
+        old_column = copy(sample_df.select(column=column_index, pandas_return_type=True))
         new_column = Series([7, 8, 9])
-        sample_df.update(column=column_index, to=new_column, in_place=True)
 
-        assert new_column.equals(sample_df.select(column=column_index))
+        sample_df.update(column=column_index, to=new_column, in_place=True)
+        assert new_column.equals(sample_df.select(column=column_index, pandas_return_type=True))
 
         sample_df.undo()
-
-        assert old_column.equals(sample_df.select(column=column_index))
+        assert old_column.equals(sample_df.select(column=column_index, pandas_return_type=True))
 
     # def test_update_row_and_return_by_index(self, sample_df: DF):
     #     new_column = Series([7, 8, 9])
@@ -100,21 +145,56 @@ class TestDF:
 
     def test_update_column_in_place_by_name(self, sample_df: DF):
         column_name = "a"
-        old_column = copy(sample_df.select(column=column_name))
+        old_column = copy(sample_df.select(column=column_name, pandas_return_type=True))
         new_column = Series([7, 8, 9])
-        sample_df.update(column=column_name, to=new_column, in_place=True)
 
-        assert new_column.equals(sample_df.select(column=column_name))
+        sample_df.update(column=column_name, to=new_column, in_place=True)
+        assert new_column.equals(sample_df.select(column=column_name, pandas_return_type=True))
 
         sample_df.undo()
-
-        assert old_column.equals(sample_df.select(column=column_name))
+        assert old_column.equals(sample_df.select(column=column_name, pandas_return_type=True))
 
     def test_update_row_and_return_by_name(self, sample_df):
         pass
 
     def test_update_column_and_return_by_name(self, sample_df):
         pass
+
+    def test_append_row(self, sample_df, static_df):
+        new_row = Series({'a': 10, 'b': 11, 'c': 12})
+
+        # keyword arg for testing undo() logic
+        sample_df.append(row=new_row)
+        assert new_row.equals(sample_df.select(row=3, pandas_return_type=True))
+
+        sample_df.undo()
+        assert static_df.dataframe.equals(sample_df.dataframe)
+
+        # positional arg for testing undo() logic
+        sample_df.append(new_row)
+        assert new_row.equals(sample_df.select(row=3, pandas_return_type=True))
+
+        sample_df.undo()
+        assert static_df.dataframe.equals(sample_df.dataframe)
+
+        result = sample_df.append(row=new_row, in_place=False)
+        assert new_row.equals(result.select(row=3, pandas_return_type=True))
+
+    def test_append_column(self, sample_df, static_df):
+        new_column = Series([10, 11, 12])
+
+        sample_df.append(column=new_column)
+        assert new_column.equals(sample_df.select(column=3, pandas_return_type=True))
+
+        sample_df.undo()
+        assert static_df.dataframe.equals(sample_df.dataframe)
+
+        result = sample_df.append(column=new_column, in_place=False)
+        assert new_column.equals(result.select(column=3, pandas_return_type=True))
+
+    def test_append_with_exception(self, sample_df):
+        with pytest.raises(Exception):
+            sample_df.append()
 
     def test_sum_product(self, sample_df):
         actual_result_with_names = sample_df.sum_product('a', 'b')
@@ -138,7 +218,7 @@ class TestDF:
 
     def test_getattribute_fallback(self, sample_df):
         new_value = "value"
-        sample_df._df.some_new_field = new_value
+        sample_df.dataframe.some_new_field = new_value
         assert sample_df.__getattribute__("some_new_field") == new_value
 
     def test_getattribute_fallout(self, sample_df):

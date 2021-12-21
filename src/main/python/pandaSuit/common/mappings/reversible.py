@@ -1,4 +1,4 @@
-from pandaSuit.common.constant.decorators import UPDATE
+from pandaSuit.common.constant.decorators import UPDATE, APPEND
 
 
 def intermediate_update_args(kwargs):
@@ -15,12 +15,25 @@ def update_args(kwargs):
     }
 
 
+def append_args(kwargs):
+    if "row" in kwargs:
+        return {
+            "row": -1
+        }
+    else:
+        return {
+            "column": -1
+        }
+
+
 REVERSE_MAPPING = {
-    UPDATE: "update"
+    UPDATE: "update",
+    APPEND: "remove"
 }
 
 REVERSE_ARGS = {
-    UPDATE: update_args
+    UPDATE: update_args,
+    APPEND: append_args
 }
 
 INTERMEDIATE_REVERSE_MAPPING = {
