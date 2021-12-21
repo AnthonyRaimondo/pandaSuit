@@ -43,7 +43,7 @@ def reversible(func):
         if not in_place_operation(args[1:], kwargs, method_signature):
             return func(*args, **kwargs)  # don't create unwind step, but return value from method called
         else:
-            if len(args) > 0:  # convert positional args into keyword args
+            if len(args) > 1:  # convert positional args into keyword args
                 kwargs.update(infer_kwargs(args[1:], method_signature))
                 args = (args[0],)  # remove positional args to avoid passing parameters multiple times when calling the function
             intermediate_reverse_function = INTERMEDIATE_REVERSE_MAPPING.get(function_name)

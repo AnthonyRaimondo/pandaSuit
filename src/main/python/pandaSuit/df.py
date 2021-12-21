@@ -49,13 +49,17 @@ class DF:
                     result = self.dataframe.loc[row, column]
                 else:
                     if self._names_supplied(row):
-                        result = self.dataframe.loc[row].iloc[:, column]
+                        if self._names_supplied(column):
+                            result = self.dataframe.loc[row, column]
+                        else:
+                            result = self.dataframe.loc[row, :][column]
                     else:
-                        result = self.dataframe.iloc[row, column]
-        if pandas_return_type or not isinstance(result, (pandas.Series, pandas.DataFrame)):
-            return result
-        else:
-            return DF(result)
+                        if self._names_supplied(column):
+                            result = self.dataframe.iloc[row, :][column]
+                        else:
+                            result = self.dataframe.iloc[row, column]
+
+        return self._df_query_return(result, pandas_return_type)
 
     def slice(self,
               from_row: int or str = 0,
@@ -80,7 +84,7 @@ class DF:
 
         result = self.dataframe.iloc[from_row:to_row, from_column:to_column]
 
-        return result if pandas_return_type else DF(result)
+        return self._df_query_return(result, pandas_return_type)
 
     def where(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pandas.DataFrame:
         if isinstance(some_value, str):
@@ -203,23 +207,28 @@ class DF:
             if column is not None:
                 if row is not None:
                     if isinstance(column, str):
-                        self.dataframe.loc[row, column] = to
+                        if isinstance(row, str):
+                            self.dataframe.loc[row, column] = to
+                        else:
+                            self.dataframe.iloc[row, find_indexes(self.column_names, column)] = to
                     else:
-                        self.dataframe.iloc[row, column] = to
+                        if isinstance(row, str):
+                            self.dataframe.iloc[find_indexes(self.row_names, row), column] = to
+                        else:
+                            self.dataframe.iloc[row, column] = to
                 else:
                     if isinstance(column, str):
-                        self.dataframe.loc[create_index_list(self.row_count), column] = to
+                        self.dataframe.loc[self.row_names, column] = to
                     else:
                         self.dataframe.iloc[create_index_list(self.row_count), column] = to
-            elif row is not None:
+            elif row is not None:  # todo
                 if isinstance(row, str):
                     pass
                 else:
                     pass
-            else:
-                raise Exception("Please supply a row or column to update.")
+            # Note: if row=None and column=None, Exception is thrown from decorator. No need to raise one here.
         else:
-            _df = copy(self)
+            _df = DF(self.dataframe)
             _df.update(row=row, column=column, to=to, in_place=True)
             return _df
 
@@ -231,7 +240,7 @@ class DF:
             else:
                 return self._append_row(row, in_place)
         elif row is None and column is not None:
-            if column.name is None:  # without a column name, undo() does not work because it calls self._df.drop(None)
+            if column.name is None:  # without a column name, undo() does not work because it calls self.dataframe.drop(None)
                 column.name = self._create_column_name()
             if in_place:
                 self._append_column(column, in_place)
@@ -257,11 +266,11 @@ class DF:
         if row is not None:
             if isinstance(row, int):
                 row = self.row_names[row]
-            self._df.drop(row, axis=0, inplace=True)
+            self.dataframe.drop(row, axis=0, inplace=True)
         if column is not None:
             if isinstance(column, int):
                 column = self.column_names[column]
-            self._df.drop(column, axis=1, inplace=True)
+            self.dataframe.drop(column, axis=1, inplace=True)
 
     def undo(self) -> None:
         """
@@ -283,7 +292,7 @@ class DF:
 
     def _append_column(self, column: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
-            self._df.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
+            self.dataframe.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
         else:
             _df = copy(self.dataframe)
             _df.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
@@ -292,6 +301,13 @@ class DF:
     def _create_column_name(self) -> str:
         new_cols = len([col for col in self.column_names if "new_col" in col])
         return f"new_col{new_cols + 1}"
+
+    @staticmethod
+    def _df_query_return(result, pandas_return_type: bool):
+        if pandas_return_type or not isinstance(result, (pandas.Series, pandas.DataFrame)):
+            return result
+        else:
+            return DF(result)
 
     @staticmethod
     def _names_supplied(selector: int or str or list) -> bool:

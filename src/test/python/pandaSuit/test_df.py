@@ -259,6 +259,39 @@ class TestDF:
     def test_update_row_in_place_by_name(self, sample_df):
         pass
 
+    def test_update_row_and_column(self, sample_df, sample_df_with_row_names):
+        new_value = 1000
+
+        # update single value by row and column index
+        column_index, row_index = 0, 1
+        old_value = sample_df.select(row=row_index, column=column_index, pandas_return_type=True)
+        sample_df.update(row=row_index, column=column_index, to=new_value, in_place=True)
+        assert new_value == sample_df.select(row=row_index, column=column_index, pandas_return_type=True)
+        sample_df.undo()
+        assert old_value == sample_df.select(row=row_index, column=column_index, pandas_return_type=True)
+
+        # update single value by row and column name
+        column_name, row_name = "a", "e"
+        old_value = sample_df_with_row_names.select(row=row_name, column=column_name, pandas_return_type=True)
+        sample_df_with_row_names.update(row=row_name, column=column_name, to=new_value, in_place=True)
+        assert new_value == sample_df_with_row_names.select(row=row_name, column=column_name, pandas_return_type=True)
+        sample_df_with_row_names.undo()
+        assert old_value == sample_df_with_row_names.select(row=row_name, column=column_name, pandas_return_type=True)
+
+        # update single value by row index and column name
+        old_value = sample_df.select(row=row_index, column=column_name, pandas_return_type=True)
+        sample_df.update(row=row_index, column=column_name, to=new_value, in_place=True)
+        assert new_value == sample_df.select(row=row_index, column=column_name, pandas_return_type=True)
+        sample_df.undo()
+        assert old_value == sample_df.select(row=row_index, column=column_name, pandas_return_type=True)
+
+        # update single value by row name and column index
+        old_value = sample_df_with_row_names.select(row=row_name, column=column_index, pandas_return_type=True)
+        sample_df_with_row_names.update(row=row_name, column=column_index, to=new_value, in_place=True)
+        assert new_value == sample_df_with_row_names.select(row=row_name, column=column_index, pandas_return_type=True)
+        sample_df_with_row_names.undo()
+        assert old_value == sample_df_with_row_names.select(row=row_name, column=column_index, pandas_return_type=True)
+
     def test_update_column_in_place_by_name(self, sample_df: DF):
         column_name = "a"
         old_column = copy(sample_df.select(column=column_name, pandas_return_type=True))
@@ -275,6 +308,10 @@ class TestDF:
 
     def test_update_column_and_return_by_name(self, sample_df):
         pass
+
+    def test_update_with_exception(self, sample_df):
+        with pytest.raises(Exception):
+            sample_df.update()
 
     def test_append_row(self, sample_df, static_df):
         new_row = Series({'a': 10, 'b': 11, 'c': 12})

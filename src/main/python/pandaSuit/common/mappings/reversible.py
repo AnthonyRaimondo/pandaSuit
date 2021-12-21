@@ -4,6 +4,7 @@ from pandaSuit.common.constant.decorators import UPDATE, APPEND
 def intermediate_update_args(kwargs):
     return {
         "column": kwargs.get("column"),
+        "row": kwargs.get("row"),
         "pandas_return_type": True
     }
 
@@ -11,6 +12,7 @@ def intermediate_update_args(kwargs):
 def update_args(kwargs):
     return {
         "column": kwargs.get("column"),
+        "row": kwargs.get("row"),
         "to": kwargs.get("to")
     }
 
