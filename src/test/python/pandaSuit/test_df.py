@@ -111,6 +111,122 @@ class TestDF:
         result = sample_df_with_row_names.select(row=['d', 'e'], column=['a', 'b'], pandas_return_type=True)
         assert result.shape == (2, 2)
 
+    def test_slice(self, sample_df, sample_df_with_row_names):
+        # from_row only (int)
+        assert sample_df.slice(from_row=1).shape == (2, 3)
+
+        # to_row only (int)
+        assert sample_df.slice(to_row=1).shape == (1, 3)
+
+        # from_column only (int)
+        assert sample_df.slice(from_column=1).shape == (3, 2)
+
+        # to_column only (int)
+        assert sample_df.slice(to_column=1).shape == (3, 1)
+
+        # from_row only (str)
+        assert sample_df_with_row_names.slice(from_row='e').shape == (2, 3)
+
+        # to_row only (str)
+        assert sample_df_with_row_names.slice(to_row='e').shape == (1, 3)
+
+        # from_column only (str)
+        assert sample_df_with_row_names.slice(from_column='b').shape == (3, 2)
+
+        # to_column only (str)
+        assert sample_df_with_row_names.slice(to_column='b').shape == (3, 1)
+
+        # row slice (int, int)
+        assert sample_df.slice(from_row=1, to_row=2).shape == (1, 3)
+
+        # column slice (int, int)
+        assert sample_df.slice(from_column=1, to_column=2).shape == (3, 1)
+
+        # row slice (str, str)
+        assert sample_df_with_row_names.slice(from_row='e', to_row='f').shape == (1, 3)
+
+        # column slice (str, str)
+        assert sample_df_with_row_names.slice(from_column='b', to_column='c').shape == (3, 1)
+
+        # row slice (str, int)
+        assert sample_df_with_row_names.slice(from_row='e', to_row=2).shape == (1, 3)
+
+        # column slice (str, int)
+        assert sample_df.slice(from_column='b', to_column=2).shape == (3, 1)
+
+        # row slice (int, str)
+        assert sample_df_with_row_names.slice(from_row=1, to_row='f').shape == (1, 3)
+
+        # column slice (int, str)
+        assert sample_df_with_row_names.slice(from_column=1, to_column='c').shape == (3, 1)
+
+        # row and column slice (int)
+        assert sample_df.slice(from_row=1, to_row=2, from_column=1, to_column=2).shape == (1, 1)
+
+        # row and column slice (str)
+        assert sample_df_with_row_names.slice(from_row='e', to_row='f', from_column='b', to_column='c').shape == (1, 1)
+
+        # row and column slice (int, str)
+        assert sample_df_with_row_names.slice(from_row=1, to_row='f', from_column='b', to_column=2).shape == (1, 1)
+
+    def test_slice__pandas_return(self, sample_df, sample_df_with_row_names):
+        # from_row only (int)
+        assert sample_df.slice(from_row=1, pandas_return_type=True).shape == (2, 3)
+
+        # to_row only (int)
+        assert sample_df.slice(to_row=1, pandas_return_type=True).shape == (1, 3)
+
+        # from_column only (int)
+        assert sample_df.slice(from_column=1, pandas_return_type=True).shape == (3, 2)
+
+        # to_column only (int)
+        assert sample_df.slice(to_column=1, pandas_return_type=True).shape == (3, 1)
+
+        # from_row only (str)
+        assert sample_df_with_row_names.slice(from_row='e', pandas_return_type=True).shape == (2, 3)
+
+        # to_row only (str)
+        assert sample_df_with_row_names.slice(to_row='e', pandas_return_type=True).shape == (1, 3)
+
+        # from_column only (str)
+        assert sample_df_with_row_names.slice(from_column='b', pandas_return_type=True).shape == (3, 2)
+
+        # to_column only (str)
+        assert sample_df_with_row_names.slice(to_column='b', pandas_return_type=True).shape == (3, 1)
+
+        # row slice (int, int)
+        assert sample_df.slice(from_row=1, to_row=2, pandas_return_type=True).shape == (1, 3)
+
+        # column slice (int, int)
+        assert sample_df.slice(from_column=1, to_column=2, pandas_return_type=True).shape == (3, 1)
+
+        # row slice (str, str)
+        assert sample_df_with_row_names.slice(from_row='e', to_row='f', pandas_return_type=True).shape == (1, 3)
+
+        # column slice (str, str)
+        assert sample_df_with_row_names.slice(from_column='b', to_column='c', pandas_return_type=True).shape == (3, 1)
+
+        # row slice (str, int)
+        assert sample_df_with_row_names.slice(from_row='e', to_row=2, pandas_return_type=True).shape == (1, 3)
+
+        # column slice (str, int)
+        assert sample_df.slice(from_column='b', to_column=2, pandas_return_type=True).shape == (3, 1)
+
+        # row slice (int, str)
+        assert sample_df_with_row_names.slice(from_row=1, to_row='f', pandas_return_type=True).shape == (1, 3)
+
+        # column slice (int, str)
+        assert sample_df_with_row_names.slice(from_column=1, to_column='c', pandas_return_type=True).shape == (3, 1)
+
+        # row and column slice (int)
+        assert sample_df.slice(from_row=1, to_row=2, from_column=1, to_column=2, pandas_return_type=True).shape == (1, 1)
+
+        # row and column slice (str)
+        assert sample_df_with_row_names.slice(from_row='e', to_row='f', from_column='b', to_column='c', pandas_return_type=True).shape == (1, 1)
+
+        # row and column slice (int, str)
+        assert sample_df_with_row_names.slice(from_row=1, to_row='f', from_column='b', to_column=2, pandas_return_type=True).shape == (1, 1)
+
     # def test_update_row_in_place_by_index(self, sample_df: DF):
     #     row = 1
     #     new_row = Series([7, 8, 9])

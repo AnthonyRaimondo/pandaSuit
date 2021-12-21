@@ -40,7 +40,9 @@ def reversible(func):
     def wrapper_reverse(*args, **kwargs):
         function_name = extract_function_name(func.__repr__())
         method_signature = inspect.signature(args[0].__getattribute__(function_name))
-        if in_place_operation(args[1:], kwargs, method_signature):
+        if not in_place_operation(args[1:], kwargs, method_signature):
+            return func(*args, **kwargs)  # don't create unwind step, but return value from method called
+        else:
             if len(args) > 0:  # convert positional args into keyword args
                 kwargs.update(infer_kwargs(args[1:], method_signature))
                 args = (args[0],)  # remove positional args to avoid passing parameters multiple times when calling the function
@@ -55,6 +57,4 @@ def reversible(func):
             reverse_function = REVERSE_MAPPING.get(function_name)
             args[0].__setattr__(UNWIND_LIST, args[0].__getattribute__(UNWIND_LIST) + deque([Unwind(reverse_function, reverse_args)]))
             func(*args, **kwargs)
-        else:
-            return func(*args, **kwargs)
     return wrapper_reverse
