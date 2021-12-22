@@ -24,7 +24,7 @@ class DF:
     def __init__(self, data=None):
         self.data = data
         if data is not None:
-            self._df = pandas.DataFrame(data)
+            self._df = data if isinstance(data, pandas.DataFrame) else pandas.DataFrame(data)
         else:
             self._df = pandas.DataFrame()
         self._unwind = deque()
@@ -35,24 +35,31 @@ class DF:
                pandas_return_type: bool = False) -> pandas.DataFrame or pandas.Series or DF:
         if row is None:
             if self._names_supplied(column):
-                result = self._df[column]
+                result = self.dataframe[column]
             else:
-                result = self._df.iloc[:, column]
+                result = self.dataframe.iloc[:, column]
         else:
             if column is None:
                 if self._names_supplied(row):
-                    result = self._df.loc[row]
+                    result = self.dataframe.loc[row]
                 else:
-                    result = self._df.iloc[row]
+                    result = self.dataframe.iloc[row]
             else:
                 if self._names_supplied(row) and self._names_supplied(column):
-                    result = self._df.loc[row, column]
+                    result = self.dataframe.loc[row, column]
                 else:
                     if self._names_supplied(row):
-                        result = self._df.loc[row].iloc[:, column]
+                        if self._names_supplied(column):
+                            result = self.dataframe.loc[row, column]
+                        else:
+                            result = self.dataframe.loc[row, :][column]
                     else:
-                        result = self._df.iloc[row, column]
-        return result if pandas_return_type else DF(result)
+                        if self._names_supplied(column):
+                            result = self.dataframe.iloc[row, :][column]
+                        else:
+                            result = self.dataframe.iloc[row, column]
+
+        return self._df_query_return(result, pandas_return_type)
 
     def slice(self,
               from_row: int or str = 0,
@@ -75,26 +82,26 @@ class DF:
         if to_column < 0:
             to_column += self.column_count + 1
 
-        result = self._df.iloc[from_row:to_row, from_column:to_column]
+        result = self.dataframe.iloc[from_row:to_row, from_column:to_column]
 
-        return result if pandas_return_type else DF(result)
+        return self._df_query_return(result, pandas_return_type)
 
     def where(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pandas.DataFrame:
         if isinstance(some_value, str):
-            result = self._df[self._df[column_name].str.contains(some_value, na=False)]
+            result = self.dataframe[self.dataframe[column_name].str.contains(some_value, na=False)]
         else:
-            result = self._df.loc[self._df[column_name] == some_value]
+            result = self.dataframe.loc[self.dataframe[column_name] == some_value]
         return result if pandas_return_type else DF(result)
 
     def where_not(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pandas.DataFrame:
         if isinstance(some_value, str):
-            result = self._df[~self._df[column_name].isin([some_value])]
+            result = self.dataframe[~self.dataframe[column_name].isin([some_value])]
         else:
-            result = self._df.loc[self._df[column_name] != some_value]
+            result = self.dataframe.loc[self.dataframe[column_name] != some_value]
         return result if pandas_return_type else DF(result)
 
     def random_row(self) -> pandas.DataFrame:
-        return self._df.iloc[np_random.randint(0, self._df.shape[0] - 1)]
+        return self.dataframe.iloc[np_random.randint(0, self.dataframe.shape[0] - 1)]
 
     def regress(self, y: str or int, x: list or str or int, logit: bool = False) -> LinearModel or LogisticModel:
         if logit:
@@ -123,7 +130,7 @@ class DF:
         :return: BarPlot with y as response variable(s) and x as explanatory variable.
         """
         return BarPlot(x=self.select(column=x) if x is not None else self.row_names if len(bars) > 0 else self.column_names,
-                       y=[pandas.Series(column[1]) for column in self.select(column=list(bars)).iteritems()] if len(bars) > 0 else [self._df.sum()],
+                       y=[pandas.Series(column[1]) for column in self.select(column=list(bars)).iteritems()] if len(bars) > 0 else [self.dataframe.sum()],
                        y_label=bars[0] if len(bars) == 1 and isinstance(bars[0], str) else None,
                        x_label=x if isinstance(x, str) else None)
 
@@ -136,7 +143,7 @@ class DF:
         if len(slices) > 1:
             return PiePlot(self.select(column=list(slices)).sum().to_dict())
         elif len(slices) == 0:
-            return PiePlot(self._df.sum().to_dict())
+            return PiePlot(self.dataframe.sum().to_dict())
         else:
             return PiePlot(self.select(column=slices[0]).value_counts().to_dict())
 
@@ -158,11 +165,11 @@ class DF:
         return Histogram(y=self.select(column=y), bins=bins)
 
     def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
-        result = self._df[self._df[column].isnull()]
+        result = self.dataframe[self.dataframe[column].isnull()]
         return result if pandas_return_type else DF(result)
 
     def where_not_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
-        result = self._df[self._df[column].notna()]
+        result = self.dataframe[self.dataframe[column].notna()]
         return result if pandas_return_type else DF(result)
 
     def group_by(self, column: int or str = None, row: int or str = None, date_grouping: str = None) -> dict:
@@ -185,13 +192,13 @@ class DF:
                 raise Exception(f"Invalid date grouping type \"{date_grouping}\"")
             if column is None:
                 raise Exception("Cannot group on a Row of dates")
-            date_group_by_object = self._df.groupby(pandas.to_datetime(self.select(column=column)).dt.strftime(grouping))
+            date_group_by_object = self.dataframe.groupby(pandas.to_datetime(self.select(column=column)).dt.strftime(grouping))
             return {date_key: DF(date_group_by_object.get_group(date_key)) for date_key in list(date_group_by_object.groups.keys())}
 
     def sum_product(self, *columns: int or str) -> int or float:
         product_column = pandas.Series([1]*self.row_count)
         for column in columns:
-            product_column *= self.select(column=column)
+            product_column *= self.select(column=column, pandas_return_type=True)
         return product_column.sum()
 
     @reversible
@@ -200,26 +207,32 @@ class DF:
             if column is not None:
                 if row is not None:
                     if isinstance(column, str):
-                        self._df.loc[row, column] = to
+                        if isinstance(row, str):
+                            self.dataframe.loc[row, column] = to
+                        else:
+                            self.dataframe.iloc[row, find_indexes(self.column_names, column)] = to
                     else:
-                        self._df.iloc[row, column] = to
+                        if isinstance(row, str):
+                            self.dataframe.iloc[find_indexes(self.row_names, row), column] = to
+                        else:
+                            self.dataframe.iloc[row, column] = to
                 else:
                     if isinstance(column, str):
-                        self._df.loc[create_index_list(self.row_count), column] = to
+                        self.dataframe.loc[self.row_names, column] = to
                     else:
-                        self._df.iloc[create_index_list(self.row_count), column] = to
-            elif row is not None:
+                        self.dataframe.iloc[create_index_list(self.row_count), column] = to
+            elif row is not None:  # todo
                 if isinstance(row, str):
                     pass
                 else:
                     pass
-            else:
-                raise Exception("Please supply a row or column to update.")
+            # Note: if row=None and column=None, Exception is thrown from decorator. No need to raise one here.
         else:
-            _df = copy(self)
+            _df = DF(self.dataframe)
             _df.update(row=row, column=column, to=to, in_place=True)
             return _df
 
+    @reversible
     def append(self, row: pandas.Series = None, column: pandas.Series = None, in_place: bool = True) -> DF or None:
         if row is not None and column is None:
             if in_place:
@@ -227,6 +240,8 @@ class DF:
             else:
                 return self._append_row(row, in_place)
         elif row is None and column is not None:
+            if column.name is None:  # without a column name, undo() does not work because it calls self.dataframe.drop(None)
+                column.name = self._create_column_name()
             if in_place:
                 self._append_column(column, in_place)
             else:
@@ -237,15 +252,25 @@ class DF:
                     self._append_column(column, in_place)
                     self._append_row(row, in_place)
                 else:
-                    return DF(copy(self._df))._append_column(column, in_place)._append_row(row, in_place)
+                    return DF(copy(self.dataframe))._append_column(column, in_place)._append_row(row, in_place)
             else:
                 if in_place:
                     self._append_row(row, in_place)
                     self._append_column(column, in_place)
                 else:
-                    return DF(copy(self._df))._append_row(row, in_place)._append_column(column, in_place)
+                    return DF(copy(self.dataframe))._append_row(row, in_place)._append_column(column, in_place)
         else:
             raise Exception("row or column parameter must be set")
+
+    def remove(self, row: int or str = None, column: int or str = None):
+        if row is not None:
+            if isinstance(row, int):
+                row = self.row_names[row]
+            self.dataframe.drop(row, axis=0, inplace=True)
+        if column is not None:
+            if isinstance(column, int):
+                column = self.column_names[column]
+            self.dataframe.drop(column, axis=1, inplace=True)
 
     def undo(self) -> None:
         """
@@ -255,23 +280,34 @@ class DF:
         self.__getattribute__(unwind_object.function)(**unwind_object.args[0])
 
     def reset(self) -> None:
-        self._df = DF(data=self.data)._df
+        self._df = DF(data=self.data).dataframe
 
     def _append_row(self, row: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
-            self._df = self._df.append(other=row, ignore_index=True)
+            self._df = self.dataframe.append(other=row, ignore_index=True)
         else:
-            _df = copy(self._df)
-            _df.append(other=row, ignore_index=True)
+            _df = copy(self.dataframe)
+            _df = _df.append(other=row, ignore_index=True)
             return DF(_df)
 
     def _append_column(self, column: pandas.Series, in_place: bool) -> DF or None:
         if in_place:
-            self._df.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
+            self.dataframe.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
         else:
-            _df = copy(self._df)
+            _df = copy(self.dataframe)
             _df.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
             return DF(_df)
+
+    def _create_column_name(self) -> str:
+        new_cols = len([col for col in self.column_names if "new_col" in col])
+        return f"new_col{new_cols + 1}"
+
+    @staticmethod
+    def _df_query_return(result, pandas_return_type: bool):
+        if pandas_return_type or not isinstance(result, (pandas.Series, pandas.DataFrame)):
+            return result
+        else:
+            return DF(result)
 
     @staticmethod
     def _names_supplied(selector: int or str or list) -> bool:
@@ -295,12 +331,16 @@ class DF:
         return headers
 
     @property
+    def dataframe(self) -> pandas.DataFrame:
+        return self._df
+
+    @property
     def is_empty(self) -> bool:
-        return self._df.empty
+        return self.dataframe.empty
 
     @property
     def rows(self) -> list:
-        return [pandas.Series(row[1]) for row in self._df.iterrows()]
+        return [pandas.Series(row[1]) for row in self.dataframe.iterrows()]
 
     @property
     def row_names(self):
@@ -308,31 +348,31 @@ class DF:
 
     @property
     def row_count(self) -> int:
-        return len(self._df)
+        return len(self.dataframe)
 
     @property
     def column_names(self) -> list:
-        return list(self._df.columns)
+        return list(self.dataframe.columns)
 
     @property
     def column_count(self) -> int:
-        return len(self._df.columns)
+        return len(self.dataframe.columns)
 
     @property
     def shape(self) -> tuple:
-        return self._df.shape
+        return self.dataframe.shape
 
     def __setattr__(self, name, value):
         try:
             super(DF, self).__setattr__(name, value)
         except AttributeError:  # don't immediately raise AttributeError
-            self._df.__setattr__(name, value)  # instead, invoke setter on underlying pandas DataFrame
+            self.dataframe.__setattr__(name, value)  # instead, invoke setter on underlying pandas DataFrame
 
     def __getattribute__(self, name):
         try:
             return super(DF, self).__getattribute__(name)
         except AttributeError:  # don't immediately raise AttributeError
-            return self._df.__getattribute__(name)  # instead, invoke getter on underlying pandas DataFrame
+            return self.dataframe.__getattribute__(name)  # instead, invoke getter on underlying pandas DataFrame
 
 
 class RandomDF(DF):
@@ -372,7 +412,7 @@ class RandomDF(DF):
         self._df = RandomDF(rows=number_of_rows if number_of_rows is not None else self.number_of_rows,
                             columns=number_of_columns if number_of_columns is not None else self.number_of_columns,
                             data_type=data_type if data_type is not None else self.data_type,
-                            distribution=distribution if distribution is not None else self.distribution)._df
+                            distribution=distribution if distribution is not None else self.distribution).dataframe
 
     # Static methods
     @staticmethod
