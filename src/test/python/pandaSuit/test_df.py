@@ -39,7 +39,7 @@ def static_df_with_row_names() -> DF:
             {'a': 4, 'b': 5, 'c': 6},
             {'a': 7, 'b': 8, 'c': 9}]
     df = DF(data=data)
-    df._df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index", inplace=True)
+    df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index", inplace=True)
     return df
 
 
@@ -406,61 +406,94 @@ class TestDF:
         assert sample_df.equals(static_df)
 
         # insert multiple continuous columns (multiple indexes passed)
+        sample_df.insert(index=[index, index+1, index+2], column=columns)
+        assert columns.rename({0: 3, 1: 4, 2: 5}, inplace=False, axis=1).equals(sample_df.slice(from_column=index, to_column=index+columns.shape[1], pandas_return_type=True))
+        sample_df.undo()
+        assert sample_df.equals(static_df)
+
         # insert discontinuous columns
+        sample_df.insert(index=[0, 2, 4], column=columns)
+        assert columns.equals(sample_df.select(column=[0, 2, 4], pandas_return_type=True))
+        sample_df.undo()
+        assert sample_df.equals(static_df)
 
     def test_insert_with_exception(self, sample_df):
         with pytest.raises(Exception):
             sample_df.insert(index=1)
         assert len(sample_df._unwind) == 0
 
-    # def test_remove(self, sample_df_with_row_names, static_df_with_row_names):
-        # remove row by index
-        # sample_df_with_row_names.remove(row=1)
-        # assert sample_df_with_row_names.shape == (2, 3)
-        # sample_df_with_row_names.undo()
-        # assert sample_df_with_row_names.equals(static_df_with_row_names)
-        #
-        # # remove row by name
-        # sample_df_with_row_names.remove(row='e')
-        # assert sample_df_with_row_names.shape == (2, 3)
-        # sample_df_with_row_names.undo()
-        # assert sample_df_with_row_names.equals(static_df_with_row_names)
-        #
-        # # remove column by index
-        # sample_df_with_row_names.remove(column=1)
-        # assert sample_df_with_row_names.shape == (3, 2)
-        # sample_df_with_row_names.undo()
-        # assert sample_df_with_row_names.equals(static_df_with_row_names)
-        #
-        # # remove column by name
-        # sample_df_with_row_names.remove(column='b')
-        # assert sample_df_with_row_names.shape == (3, 2)
-        # sample_df_with_row_names.undo()
-        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+    def test_remove(self, sample_df_with_row_names, static_df_with_row_names):
+        # remove row by single index
+        sample_df_with_row_names.remove(row=1)
+        assert sample_df_with_row_names.shape == (2, 3)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
 
-        # remove row by index
-# sample_df_with_row_names.remove(row=[0, 2])
-# assert sample_df_with_row_names.shape == (1, 3)
-# sample_df_with_row_names.undo()
-# assert sample_df_with_row_names.equals(static_df_with_row_names)
+        # remove row by single name
+        sample_df_with_row_names.remove(row='e')
+        assert sample_df_with_row_names.shape == (2, 3)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
 
-        # # remove row by name
-        # sample_df_with_row_names.remove(row='e')
-        # assert sample_df_with_row_names.shape == (2, 3)
-        # sample_df_with_row_names.undo()
-        # assert sample_df_with_row_names.equals(static_df_with_row_names)
-        #
-        # # remove column by index
-        # sample_df_with_row_names.remove(column=1)
-        # assert sample_df_with_row_names.shape == (3, 2)
-        # sample_df_with_row_names.undo()
-        # assert sample_df_with_row_names.equals(static_df_with_row_names)
-        #
-        # # remove column by name
-        # sample_df_with_row_names.remove(column='b')
-        # assert sample_df_with_row_names.shape == (3, 2)
-        # sample_df_with_row_names.undo()
-        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+        # remove column by single index
+        sample_df_with_row_names.remove(column=1)
+        assert sample_df_with_row_names.shape == (3, 2)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove column by single name
+        sample_df_with_row_names.remove(column='b')
+        assert sample_df_with_row_names.shape == (3, 2)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove rows by continuous index
+        sample_df_with_row_names.remove(row=[0, 1])
+        assert sample_df_with_row_names.shape == (1, 3)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove rows by discontinuous index
+        sample_df_with_row_names.remove(row=[0, 2])
+        assert sample_df_with_row_names.shape == (1, 3)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove rows by continuous names
+        sample_df_with_row_names.remove(row=['d', 'e'])
+        assert sample_df_with_row_names.shape == (1, 3)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove rows by discontinuous names
+        sample_df_with_row_names.remove(row=['d', 'f'])
+        assert sample_df_with_row_names.shape == (1, 3)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove columns by continuous index
+        sample_df_with_row_names.remove(column=[0, 1])
+        assert sample_df_with_row_names.shape == (3, 1)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove columns by discontinuous index
+        sample_df_with_row_names.remove(column=[0, 2])
+        assert sample_df_with_row_names.shape == (3, 1)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove columns by continuous names
+        sample_df_with_row_names.remove(column=['a', 'b'])
+        assert sample_df_with_row_names.shape == (3, 1)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove columns by discontinuous names
+        sample_df_with_row_names.remove(column=['a', 'c'])
+        assert sample_df_with_row_names.shape == (3, 1)
+        sample_df_with_row_names.undo()
+        assert sample_df_with_row_names.equals(static_df_with_row_names)
 
     def test_undo_exception(self, sample_df):
         with pytest.raises(Exception):

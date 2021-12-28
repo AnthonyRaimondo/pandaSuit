@@ -282,6 +282,22 @@ class DF(pd.DataFrame):
             for counter, insert_index in enumerate(index_list):
                 insert_single_row_object(insert_index, df.select(row=counter, pandas_return_type=True))
 
+        def insert_single_column_object(single_index: int, single_column: pd.Series or pd.DataFrame) -> None:
+            before = self.slice(to_column=single_index, pandas_return_type=True)
+            after = self.slice(from_column=single_index, pandas_return_type=True)
+            if isinstance(single_column, pd.Series):
+                if single_column.name is None:
+                    single_column.name = self.column_count
+                self.__init__(overwrite_data=pd.concat([before, single_column, after], axis=1))
+            else:  # pd.DataFrame
+                self.__init__(overwrite_data=pd.concat([before, self._update_column_names(single_column), after], axis=1))
+
+        def insert_discontinuous_column_objects(index_list: list, df: DF) -> None:
+            if len(index_list) != df.column_count:
+                raise Exception("To insert discontinuous column objects, column count must match the number of index positions passed")
+            for counter, insert_index in enumerate(index_list):
+                insert_single_column_object(insert_index, df.select(column=counter, pandas_return_type=True))
+
         if in_place:
             if row is not None:
                 if isinstance(index, int):
@@ -291,14 +307,12 @@ class DF(pd.DataFrame):
                 else:
                     insert_discontinuous_row_objects(index, DF(row))
             elif column is not None:
-                if isinstance(column, pd.Series):
-                    if column.name is None:
-                        column.name = self.column_count
-                    super().insert(loc=index, column=column.name, value=column)
-                else:  # pd.DataFrame
-                    before = self.slice(to_column=index, pandas_return_type=True)
-                    after = self.slice(from_column=index, pandas_return_type=True)
-                    super().__init__(data=pd.concat([before, self._update_column_names(column), after], axis=1))
+                if isinstance(index, int):
+                    insert_single_column_object(index, column)
+                elif is_continuous_list(index):
+                    insert_single_column_object(index[0], column)
+                else:
+                    insert_discontinuous_column_objects(index, DF(column))
             else:
                 self._remove_latest_unwind_operation()
                 raise Exception("Must pass row OR column")
@@ -315,16 +329,22 @@ class DF(pd.DataFrame):
             if row is not None:
                 if isinstance(row, int):  # drop by row index
                     rows_to_drop = self.row_names[row]
-                elif isinstance(row, list):  # drop by row indexes
-                    rows_to_drop = [self.row_names[r] for r in row]
+                elif isinstance(row, list):
+                    if any([isinstance(row_selector, str) for row_selector in row]):
+                        rows_to_drop = row  # drop by row names
+                    else:
+                        rows_to_drop = [self.row_names[r] for r in row]  # drop by row indexes
                 else:  # drop by row name
                     rows_to_drop = row
                 self.drop(rows_to_drop, axis=0, inplace=True)
             elif column is not None:
                 if isinstance(column, int):  # drop by column index
                     columns_to_drop = self.column_names[column]
-                elif isinstance(column, list):  # drop by column indexes
-                    columns_to_drop = [self.column_names[c] for c in column]
+                elif isinstance(column, list):
+                    if any([isinstance(column_selector, str) for column_selector in column]):
+                        columns_to_drop = column  # drop by column names
+                    else:
+                        columns_to_drop = [self.column_names[r] for r in column]  # drop by column indexes
                 else:  # drop by column name
                     columns_to_drop = column
                 self.drop(columns_to_drop, axis=1, inplace=True)
