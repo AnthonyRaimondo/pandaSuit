@@ -41,22 +41,23 @@ def reversible(func):
         caller_function = inspect.stack()[1][3]
         if caller_function != "undo":  # this occurs when a @reversible method is un-done by another @reversible method
             function_name = extract_function_name(func.__repr__())
-            method_signature = inspect.signature(args[0].__getattribute__(function_name))
+            df_object = args[0]
+            method_signature = inspect.signature(df_object.__getattribute__(function_name))
             if not in_place_operation(args[1:], kwargs, method_signature):
                 return func(*args, **kwargs)  # don't create unwind step, but return value from method called
             else:
                 if len(args) > 1:  # convert positional args into keyword args
                     kwargs.update(infer_kwargs(args[1:], method_signature))
-                    args = (args[0],)  # remove positional args to avoid passing parameters multiple times when calling the function
-                intermediate_reverse_function = INTERMEDIATE_REVERSE_MAPPING.get(function_name)
-                reverse_args = REVERSE_ARGS.get(function_name)(kwargs)
-                if intermediate_reverse_function is not None:
+                    args = (df_object,)  # remove positional args to avoid passing parameters multiple times when calling the function
+                intermediate_reverse_function = INTERMEDIATE_REVERSE_FUNCTION_MAPPING.get(function_name)
+                reverse_args = REVERSE_ARGS.get(function_name)(df=df_object, arguments=kwargs)
+                reverse_args.update({"in_place": True})
+                if intermediate_reverse_function is not None:  # some DF manipulations require an intermediate step to reverse (e.g., .update() & .remove())
                     intermediate_reverse_args = INTERMEDIATE_REVERSE_ARGS.get(function_name)(kwargs)
-                    reverse_args.update({
-                        ARGUMENT_MAPPING.get(function_name):
-                            copy(args[0].__getattribute__(intermediate_reverse_function)(**intermediate_reverse_args))
-                    })
+                    reverse_args_to_add = df_object.__getattribute__(intermediate_reverse_function)(**intermediate_reverse_args)
+                    intermediate_arg_mapping_function = INTERMEDIATE_ARGUMENT_MAPPING.get(function_name)
+                    reverse_args.update(intermediate_arg_mapping_function(copy(kwargs), copy(reverse_args_to_add)))
                 reverse_function = REVERSE_MAPPING.get(function_name)
-                args[0].__setattr__(UNWIND_LIST, args[0].__getattribute__(UNWIND_LIST) + deque([Unwind(reverse_function, reverse_args)]))
+                df_object.__setattr__(UNWIND_LIST, df_object.__getattribute__(UNWIND_LIST) + deque([Unwind(reverse_function, reverse_args)]))
         func(*args, **kwargs)
     return wrapper_reverse

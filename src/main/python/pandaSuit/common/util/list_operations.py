@@ -1,6 +1,10 @@
 import numpy as np
 
 
+def find_index(list_to_search: list, value: object) -> list:
+    return find_indexes(list_to_search, value)[0]
+
+
 def find_indexes(list_to_search: list, value: object) -> list:
     return [index for index, element in enumerate(list_to_search) if element == value]
 
@@ -31,3 +35,11 @@ def filter_and_find_indexes(base_list: list, exclude: list or object) -> list:
     return [find_indexes(base_list, element)[0] for element in base_list if element not in exclude] \
         if isinstance(exclude, list) else \
         [find_indexes(base_list, element)[0] for element in base_list if element != exclude]
+
+
+def is_continuous_list(int_list: list) -> bool:
+    last_int, differences_list = int_list[0], []
+    for integer in int_list[1:]:
+        differences_list.append(integer - last_int)
+        last_int = integer
+    return all(value == 1 for value in differences_list)
