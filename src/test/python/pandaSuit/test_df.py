@@ -29,7 +29,7 @@ def sample_df_with_row_names() -> DF:
             {'a': 4, 'b': 5, 'c': 6},
             {'a': 7, 'b': 8, 'c': 9}]
     df = DF(data=data)
-    df._df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index", inplace=True)
+    df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index", inplace=True)
     return df
 
 
@@ -317,19 +317,20 @@ class TestDF:
     def test_append_row(self, sample_df, static_df):
         new_row = Series({'a': 10, 'b': 11, 'c': 12})
 
+        # todo: pull this out into its own test of .undo() method
         # keyword arg for testing undo() logic
         sample_df.append(row=new_row)
         assert new_row.equals(sample_df.select(row=3, pandas_return_type=True))
 
         sample_df.undo()
-        assert static_df.dataframe.equals(sample_df.dataframe)
+        assert static_df.equals(sample_df)
 
         # positional arg for testing undo() logic
         sample_df.append(new_row)
         assert new_row.equals(sample_df.select(row=3, pandas_return_type=True))
 
         sample_df.undo()
-        assert static_df.dataframe.equals(sample_df.dataframe)
+        assert static_df.equals(sample_df)
 
         result = sample_df.append(row=new_row, in_place=False)
         assert new_row.equals(result.select(row=3, pandas_return_type=True))
@@ -341,7 +342,7 @@ class TestDF:
         assert new_column.equals(sample_df.select(column=3, pandas_return_type=True))
 
         sample_df.undo()
-        assert static_df.dataframe.equals(sample_df.dataframe)
+        assert static_df.equals(sample_df)
 
         result = sample_df.append(column=new_column, in_place=False)
         assert new_column.equals(result.select(column=3, pandas_return_type=True))
@@ -362,25 +363,25 @@ class TestDF:
         sample_df.insert(index=index, row=row)
         assert row.equals(sample_df.select(row=index, pandas_return_type=True))
         sample_df.undo()
-        assert sample_df.dataframe.equals(static_df.dataframe)
+        assert sample_df.equals(static_df)
 
         # insert single column
         sample_df.insert(index=index, column=column)
         assert column.equals(sample_df.select(column=index, pandas_return_type=True))
         sample_df.undo()
-        assert sample_df.dataframe.equals(static_df.dataframe)
+        assert sample_df.equals(static_df)
 
         # insert multiple rows
         sample_df.insert(index=index, row=rows)
         assert rows.rename({0: 3, 1: 4}, inplace=False, axis=0).equals(sample_df.slice(from_row=index, to_row=index+rows.shape[0], pandas_return_type=True))
         sample_df.undo()
-        assert sample_df.dataframe.equals(static_df.dataframe)
+        assert sample_df.equals(static_df)
 
         # insert multiple columns
         sample_df.insert(index=index, column=columns)
         assert columns.rename({0: 3, 1: 4, 2: 5}, inplace=False, axis=1).equals(sample_df.slice(from_column=index, to_column=index+columns.shape[1], pandas_return_type=True))
         sample_df.undo()
-        assert sample_df.dataframe.equals(static_df.dataframe)
+        assert sample_df.equals(static_df)
 
     def test_insert_with_exception(self, sample_df):
         with pytest.raises(Exception):
@@ -403,16 +404,16 @@ class TestDF:
         assert sample_df._unwind == new_value
 
     def test_setattr_fallback(self, sample_df_with_row_names):
-        new_value = ['g', 'h', 'i']
-        sample_df_with_row_names.__setattr__("index", new_value)
-        assert sample_df_with_row_names.index == new_value
+        new_values = ['g', 'h', 'i']
+        sample_df_with_row_names.__setattr__("index", new_values)
+        assert all([new_value in sample_df_with_row_names.index for new_value in new_values])
 
     def test_getattribute(self, sample_df):
         assert sample_df.__getattribute__("_unwind") == deque()
 
     def test_getattribute_fallback(self, sample_df):
         new_value = "value"
-        sample_df.dataframe.some_new_field = new_value
+        sample_df.some_new_field = new_value
         assert sample_df.__getattribute__("some_new_field") == new_value
 
     def test_getattribute_fallout(self, sample_df):
