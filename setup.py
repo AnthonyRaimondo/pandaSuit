@@ -15,5 +15,5 @@ setup(
     package_dir={'': 'src/main/python'},
     packages=find_packages(where='src/main/python', exclude='test'),
     url='https://github.com/AnthonyRaimondo/pandaSuit',
-    version='1.2.8'
+    version='1.2.9'
 )

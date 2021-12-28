@@ -2,7 +2,7 @@ from collections import deque
 from copy import copy
 
 import pytest
-from pandas import Series
+from pandas import Series, DataFrame
 
 from pandaSuit.df import DF
 
@@ -312,6 +312,7 @@ class TestDF:
     def test_update_with_exception(self, sample_df):
         with pytest.raises(Exception):
             sample_df.update()
+        assert len(sample_df._unwind) == 0
 
     def test_append_row(self, sample_df, static_df):
         new_row = Series({'a': 10, 'b': 11, 'c': 12})
@@ -348,6 +349,46 @@ class TestDF:
     def test_append_with_exception(self, sample_df):
         with pytest.raises(Exception):
             sample_df.append()
+        assert len(sample_df._unwind) == 0
+
+    def test_insert(self, sample_df, static_df):
+        index = 2
+        row = Series({'a': 10, 'b': 11, 'c': 12})
+        rows = DataFrame({'a': [10, 13], 'b': [11, 14], 'c': [12, 15]})
+        column = Series([10, 11, 12])
+        columns = DataFrame([[10, 11, 12], [13, 14, 15], [16, 17, 18]])
+
+        # insert single row
+        sample_df.insert(index=index, row=row)
+        assert row.equals(sample_df.select(row=index, pandas_return_type=True))
+        sample_df.undo()
+        assert sample_df.dataframe.equals(static_df.dataframe)
+
+        # insert single column
+        sample_df.insert(index=index, column=column)
+        assert column.equals(sample_df.select(column=index, pandas_return_type=True))
+        sample_df.undo()
+        assert sample_df.dataframe.equals(static_df.dataframe)
+
+        # insert multiple rows
+        sample_df.insert(index=index, row=rows)
+        assert rows.rename({0: 3, 1: 4}, inplace=False, axis=0).equals(sample_df.slice(from_row=index, to_row=index+rows.shape[0], pandas_return_type=True))
+        sample_df.undo()
+        assert sample_df.dataframe.equals(static_df.dataframe)
+
+        # insert multiple columns
+        sample_df.insert(index=index, column=columns)
+        assert columns.rename({0: 3, 1: 4, 2: 5}, inplace=False, axis=1).equals(sample_df.slice(from_column=index, to_column=index+columns.shape[1], pandas_return_type=True))
+        sample_df.undo()
+        assert sample_df.dataframe.equals(static_df.dataframe)
+
+    def test_insert_with_exception(self, sample_df):
+        with pytest.raises(Exception):
+            sample_df.insert(index=1)
+        assert len(sample_df._unwind) == 0
+
+    # def test_remove(self, sample_df):
+    #     sample_df.remove()
 
     def test_sum_product(self, sample_df):
         actual_result_with_names = sample_df.sum_product('a', 'b')

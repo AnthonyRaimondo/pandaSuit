@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import deque
 from copy import copy
 
-import pandas
+import pandas as pd
 from numpy import random as np_random
 
 from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
@@ -24,15 +24,15 @@ class DF:
     def __init__(self, data=None):
         self.data = data
         if data is not None:
-            self._df = data if isinstance(data, pandas.DataFrame) else pandas.DataFrame(data)
+            self._df = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
         else:
-            self._df = pandas.DataFrame()
+            self._df = pd.DataFrame()
         self._unwind = deque()
 
     def select(self,
                row: list or int or str = None,
                column: list or int or str = None,
-               pandas_return_type: bool = False) -> pandas.DataFrame or pandas.Series or DF:
+               pandas_return_type: bool = False) -> pd.DataFrame or pd.Series or DF:
         if row is None:
             if self._names_supplied(column):
                 result = self.dataframe[column]
@@ -66,7 +66,7 @@ class DF:
               to_row: int or str = -1,
               from_column: int or str = 0,
               to_column: int or str = -1,
-              pandas_return_type: bool = False) -> pandas.DataFrame or pandas.Series or DF:
+              pandas_return_type: bool = False) -> pd.DataFrame or pd.Series or DF:
 
         if isinstance(from_row, str):
             from_row = find_indexes(self.row_names, from_row)[0]
@@ -86,21 +86,21 @@ class DF:
 
         return self._df_query_return(result, pandas_return_type)
 
-    def where(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pandas.DataFrame:
+    def where(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pd.DataFrame:
         if isinstance(some_value, str):
             result = self.dataframe[self.dataframe[column_name].str.contains(some_value, na=False)]
         else:
             result = self.dataframe.loc[self.dataframe[column_name] == some_value]
         return result if pandas_return_type else DF(result)
 
-    def where_not(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pandas.DataFrame:
+    def where_not(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pd.DataFrame:
         if isinstance(some_value, str):
             result = self.dataframe[~self.dataframe[column_name].isin([some_value])]
         else:
             result = self.dataframe.loc[self.dataframe[column_name] != some_value]
         return result if pandas_return_type else DF(result)
 
-    def random_row(self) -> pandas.DataFrame:
+    def random_row(self) -> pd.DataFrame:
         return self.dataframe.iloc[np_random.randint(0, self.dataframe.shape[0] - 1)]
 
     def regress(self, y: str or int, x: list or str or int, logit: bool = False) -> LinearModel or LogisticModel:
@@ -118,7 +118,7 @@ class DF:
         :return: LinePlot with y as response variable(s) and x as explanatory variable.
         """
         return LinePlot(x=self.select(column=x) if x is not None else self.row_names,
-                        y=[pandas.Series(column[1]) for column in self.select(column=list(y)).iteritems()],
+                        y=[pd.Series(column[1]) for column in self.select(column=list(y)).iteritems()],
                         y_label=y[0] if len(y) == 1 and isinstance(y[0], str) else None,
                         x_label=x if isinstance(x, str) else None)
 
@@ -130,7 +130,7 @@ class DF:
         :return: BarPlot with y as response variable(s) and x as explanatory variable.
         """
         return BarPlot(x=self.select(column=x) if x is not None else self.row_names if len(bars) > 0 else self.column_names,
-                       y=[pandas.Series(column[1]) for column in self.select(column=list(bars)).iteritems()] if len(bars) > 0 else [self.dataframe.sum()],
+                       y=[pd.Series(column[1]) for column in self.select(column=list(bars)).iteritems()] if len(bars) > 0 else [self.dataframe.sum()],
                        y_label=bars[0] if len(bars) == 1 and isinstance(bars[0], str) else None,
                        x_label=x if isinstance(x, str) else None)
 
@@ -156,7 +156,7 @@ class DF:
         :return: ScatterPlot with y as response variable(s) and x as explanatory variable.
         """
         return ScatterPlot(x=self.select(column=x) if x is not None else self.row_names,
-                           y=[pandas.Series(column[1]) for column in self.select(column=list(y)).iteritems()],
+                           y=[pd.Series(column[1]) for column in self.select(column=list(y)).iteritems()],
                            y_label=y[0] if len(y) == 1 and isinstance(y[0], str) else None,
                            x_label=x if isinstance(x, str) else None,
                            best_fit_line=best_fit_line)
@@ -164,11 +164,11 @@ class DF:
     def histogram(self, y: int or str, bins: int = 10) -> Histogram:
         return Histogram(y=self.select(column=y), bins=bins)
 
-    def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
+    def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pd.DataFrame:
         result = self.dataframe[self.dataframe[column].isnull()]
         return result if pandas_return_type else DF(result)
 
-    def where_not_null(self, column: str, pandas_return_type: bool = True) -> DF or pandas.DataFrame:
+    def where_not_null(self, column: str, pandas_return_type: bool = True) -> DF or pd.DataFrame:
         result = self.dataframe[self.dataframe[column].notna()]
         return result if pandas_return_type else DF(result)
 
@@ -192,11 +192,11 @@ class DF:
                 raise Exception(f"Invalid date grouping type \"{date_grouping}\"")
             if column is None:
                 raise Exception("Cannot group on a Row of dates")
-            date_group_by_object = self.dataframe.groupby(pandas.to_datetime(self.select(column=column)).dt.strftime(grouping))
+            date_group_by_object = self.dataframe.groupby(pd.to_datetime(self.select(column=column)).dt.strftime(grouping))
             return {date_key: DF(date_group_by_object.get_group(date_key)) for date_key in list(date_group_by_object.groups.keys())}
 
     def sum_product(self, *columns: int or str) -> int or float:
-        product_column = pandas.Series([1]*self.row_count)
+        product_column = pd.Series([1]*self.row_count)
         for column in columns:
             product_column *= self.select(column=column, pandas_return_type=True)
         return product_column.sum()
@@ -226,14 +226,15 @@ class DF:
                     pass
                 else:
                     pass
-            # Note: if row=None and column=None, Exception is thrown from decorator. No need to raise one here.
+            else:
+                pass  # Note: if row=None and column=None, Exception is thrown from decorator. No need to raise one here.
         else:
             _df = DF(self.dataframe)
             _df.update(row=row, column=column, to=to, in_place=True)
             return _df
 
     @reversible
-    def append(self, row: pandas.Series = None, column: pandas.Series = None, in_place: bool = True) -> DF or None:
+    def append(self, row: pd.Series = None, column: pd.Series = None, in_place: bool = True) -> DF or None:
         if row is not None and column is None:
             if in_place:
                 self._append_row(row, in_place)
@@ -260,29 +261,68 @@ class DF:
                 else:
                     return DF(copy(self.dataframe))._append_row(row, in_place)._append_column(column, in_place)
         else:
+            self._remove_latest_unwind_operation()
             raise Exception("row or column parameter must be set")
 
-    def remove(self, row: int or str = None, column: int or str = None):
+    @reversible
+    def insert(self, index: int, row: pd.Series or pd.DataFrame = None, column: pd.Series or pd.DataFrame = None, in_place: bool = True) -> DF or None:
+        if in_place:
+            if row is not None:
+                before = self.slice(to_row=index, pandas_return_type=True)
+                after = self.slice(from_row=index, pandas_return_type=True)
+                if isinstance(row, pd.Series):
+                    row.name = self.row_count
+                    self._df = pd.concat([before, pd.DataFrame(row).transpose(), after])
+                else:  # pd.Dataframe
+                    self._df = pd.concat([before, self._update_row_names(row), after], axis=0)
+            elif column is not None:
+                if isinstance(column, pd.Series):
+                    if column.name is None:
+                        column.name = self.column_count
+                    self.dataframe.insert(loc=index, column=column.name, value=column)
+                else:  # pd.DataFrame
+                    before = self.slice(to_column=index, pandas_return_type=True)
+                    after = self.slice(from_column=index, pandas_return_type=True)
+                    self._df = pd.concat([before, self._update_column_names(column), after], axis=1)
+            else:
+                self._remove_latest_unwind_operation()
+                raise Exception("Must pass row OR column")
+        else:
+            _df = DF(self.dataframe)
+            _df.insert(index=index, row=row, column=column, in_place=True)
+            return _df
+
+    @reversible
+    def remove(self, row: int or str or list = None, column: int or str or list = None):
         if row is not None:
-            if isinstance(row, int):
-                row = self.row_names[row]
-            self.dataframe.drop(row, axis=0, inplace=True)
+            if isinstance(row, int):  # drop by row index
+                rows_to_drop = self.row_names[row]
+            elif isinstance(row, list):  # drop by row indexes
+                rows_to_drop = [self.row_names[r] for r in row]
+            else:  # drop by row name
+                rows_to_drop = row
+            self.dataframe.drop(rows_to_drop, axis=0, inplace=True)
         if column is not None:
-            if isinstance(column, int):
-                column = self.column_names[column]
-            self.dataframe.drop(column, axis=1, inplace=True)
+            if isinstance(column, int):  # drop by column index
+                columns_to_drop = self.column_names[column]
+            elif isinstance(column, list):  # drop by column indexes
+                columns_to_drop = [self.column_names[c] for c in column]
+            else:  # drop by column name
+                columns_to_drop = column
+            self.dataframe.drop(columns_to_drop, axis=1, inplace=True)
 
     def undo(self) -> None:
-        """
-        Reverts the most recent change to the Table instance.
-        """
-        unwind_object: Unwind = self._unwind.pop()
+        """ Reverts the most recent change to self """
+        try:
+            unwind_object: Unwind = self._unwind.pop()
+        except IndexError:
+            raise Exception("There are no DF manipulations to undo")
         self.__getattribute__(unwind_object.function)(**unwind_object.args[0])
 
     def reset(self) -> None:
         self._df = DF(data=self.data).dataframe
 
-    def _append_row(self, row: pandas.Series, in_place: bool) -> DF or None:
+    def _append_row(self, row: pd.Series, in_place: bool) -> DF or None:
         if in_place:
             self._df = self.dataframe.append(other=row, ignore_index=True)
         else:
@@ -290,7 +330,7 @@ class DF:
             _df = _df.append(other=row, ignore_index=True)
             return DF(_df)
 
-    def _append_column(self, column: pandas.Series, in_place: bool) -> DF or None:
+    def _append_column(self, column: pd.Series, in_place: bool) -> DF or None:
         if in_place:
             self.dataframe.insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
         else:
@@ -302,9 +342,28 @@ class DF:
         new_cols = len([col for col in self.column_names if "new_col" in col])
         return f"new_col{new_cols + 1}"
 
+    def _remove_latest_unwind_operation(self):
+        del self._unwind[-1]
+
+    def _update_row_names(self, rows: pd.DataFrame) -> pd.DataFrame:
+        offset, name_changes = 0, {}
+        for row in rows.iterrows():
+            if isinstance(row[1].name, int) and row[1].name == offset:  # update row names if it appears they have generic index (i.e., [0, 1, 2...])
+                name_changes[row[1].name] = self.row_count + offset
+                offset += 1
+        return rows.rename(name_changes, inplace=False, axis=0)
+
+    def _update_column_names(self, columns: pd.DataFrame) -> pd.DataFrame:
+        offset, name_changes = 0, {}
+        for column in columns:
+            if isinstance(columns[column].name, int) and columns[column].name == offset:  # update column names if it appears they have generic index (i.e., [0, 1, 2...])
+                name_changes[columns[column].name] = self.column_count + offset
+                offset += 1
+        return columns.rename(name_changes, inplace=False, axis=1)
+
     @staticmethod
     def _df_query_return(result, pandas_return_type: bool):
-        if pandas_return_type or not isinstance(result, (pandas.Series, pandas.DataFrame)):
+        if pandas_return_type or not isinstance(result, (pd.Series, pd.DataFrame)):
             return result
         else:
             return DF(result)
@@ -331,7 +390,7 @@ class DF:
         return headers
 
     @property
-    def dataframe(self) -> pandas.DataFrame:
+    def dataframe(self) -> pd.DataFrame:
         return self._df
 
     @property
@@ -340,7 +399,7 @@ class DF:
 
     @property
     def rows(self) -> list:
-        return [pandas.Series(row[1]) for row in self.dataframe.iterrows()]
+        return [pd.Series(row[1]) for row in self.dataframe.iterrows()]
 
     @property
     def row_names(self):
