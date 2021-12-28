@@ -33,6 +33,16 @@ def sample_df_with_row_names() -> DF:
     return df
 
 
+@pytest.fixture(scope="module")
+def static_df_with_row_names() -> DF:
+    data = [{'a': 1, 'b': 2, 'c': 3},
+            {'a': 4, 'b': 5, 'c': 6},
+            {'a': 7, 'b': 8, 'c': 9}]
+    df = DF(data=data)
+    df._df.rename({0: 'd', 1: 'e', 2: 'f'}, axis="index", inplace=True)
+    return df
+
+
 class TestDF:
 
     def test_select_by_index(self, sample_df: DF):
@@ -371,25 +381,90 @@ class TestDF:
         sample_df.undo()
         assert sample_df.equals(static_df)
 
-        # insert multiple rows
+        # insert multiple continuous rows (1 index passed)
         sample_df.insert(index=index, row=rows)
         assert rows.rename({0: 3, 1: 4}, inplace=False, axis=0).equals(sample_df.slice(from_row=index, to_row=index+rows.shape[0], pandas_return_type=True))
         sample_df.undo()
         assert sample_df.equals(static_df)
 
-        # insert multiple columns
+        # insert multiple continuous rows (multiple indexes passed)
+        sample_df.insert(index=[index, index+1], row=rows)
+        assert rows.rename({0: 3, 1: 4}, inplace=False, axis=0).equals(sample_df.slice(from_row=index, to_row=index+rows.shape[0], pandas_return_type=True))
+        sample_df.undo()
+        assert sample_df.equals(static_df)
+
+        # insert discontinuous rows
+        sample_df.insert(index=[0, 2], row=rows)
+        assert rows.rename({0: 3, 1: 4}, inplace=False, axis=0).equals(sample_df.select(row=[0, 2], pandas_return_type=True))
+        sample_df.undo()
+        assert sample_df.equals(static_df)
+
+        # insert multiple continuous columns (1 index passed)
         sample_df.insert(index=index, column=columns)
         assert columns.rename({0: 3, 1: 4, 2: 5}, inplace=False, axis=1).equals(sample_df.slice(from_column=index, to_column=index+columns.shape[1], pandas_return_type=True))
         sample_df.undo()
         assert sample_df.equals(static_df)
+
+        # insert multiple continuous columns (multiple indexes passed)
+        # insert discontinuous columns
 
     def test_insert_with_exception(self, sample_df):
         with pytest.raises(Exception):
             sample_df.insert(index=1)
         assert len(sample_df._unwind) == 0
 
-    # def test_remove(self, sample_df):
-    #     sample_df.remove()
+    # def test_remove(self, sample_df_with_row_names, static_df_with_row_names):
+        # remove row by index
+        # sample_df_with_row_names.remove(row=1)
+        # assert sample_df_with_row_names.shape == (2, 3)
+        # sample_df_with_row_names.undo()
+        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+        #
+        # # remove row by name
+        # sample_df_with_row_names.remove(row='e')
+        # assert sample_df_with_row_names.shape == (2, 3)
+        # sample_df_with_row_names.undo()
+        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+        #
+        # # remove column by index
+        # sample_df_with_row_names.remove(column=1)
+        # assert sample_df_with_row_names.shape == (3, 2)
+        # sample_df_with_row_names.undo()
+        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+        #
+        # # remove column by name
+        # sample_df_with_row_names.remove(column='b')
+        # assert sample_df_with_row_names.shape == (3, 2)
+        # sample_df_with_row_names.undo()
+        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # remove row by index
+# sample_df_with_row_names.remove(row=[0, 2])
+# assert sample_df_with_row_names.shape == (1, 3)
+# sample_df_with_row_names.undo()
+# assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+        # # remove row by name
+        # sample_df_with_row_names.remove(row='e')
+        # assert sample_df_with_row_names.shape == (2, 3)
+        # sample_df_with_row_names.undo()
+        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+        #
+        # # remove column by index
+        # sample_df_with_row_names.remove(column=1)
+        # assert sample_df_with_row_names.shape == (3, 2)
+        # sample_df_with_row_names.undo()
+        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+        #
+        # # remove column by name
+        # sample_df_with_row_names.remove(column='b')
+        # assert sample_df_with_row_names.shape == (3, 2)
+        # sample_df_with_row_names.undo()
+        # assert sample_df_with_row_names.equals(static_df_with_row_names)
+
+    def test_undo_exception(self, sample_df):
+        with pytest.raises(Exception):
+            sample_df.undo()
 
     def test_sum_product(self, sample_df):
         actual_result_with_names = sample_df.sum_product('a', 'b')
