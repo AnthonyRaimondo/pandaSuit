@@ -4,3 +4,7 @@ UNWIND_LIST = "_unwind"
 UPDATE = "update"
 APPEND = "append"
 INSERT = "insert"
+REMOVE = "remove"
+
+# other methods
+SELECT = "select"

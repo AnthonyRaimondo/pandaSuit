@@ -10,7 +10,7 @@ from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
 from pandaSuit.common.constant.df import ALPHABET, DISTRIBUTIONS
 from pandaSuit.common.decorators import reversible
 from pandaSuit.common.unwind import Unwind
-from pandaSuit.common.util.list_operations import index_dictionary, create_index_list, find_indexes
+from pandaSuit.common.util.list_operations import index_dictionary, create_index_list, find_indexes, is_continuous_list
 from pandaSuit.plot.bar import BarPlot
 from pandaSuit.plot.histogram import Histogram
 from pandaSuit.plot.line import LinePlot
@@ -265,16 +265,31 @@ class DF:
             raise Exception("row or column parameter must be set")
 
     @reversible
-    def insert(self, index: int, row: pd.Series or pd.DataFrame = None, column: pd.Series or pd.DataFrame = None, in_place: bool = True) -> DF or None:
+    def insert(self, index: int or list, row: pd.Series or pd.DataFrame = None, column: pd.Series or pd.DataFrame = None, in_place: bool = True) -> DF or None:
+        def insert_single_row_object(single_index: int, single_row: pd.Series or pd.DataFrame) -> None:
+            before = self.slice(to_row=single_index, pandas_return_type=True)
+            after = self.slice(from_row=single_index, pandas_return_type=True)
+            if isinstance(single_row, pd.Series):
+                if single_row.name is None or (isinstance(single_row.name, int) and single_row.name < self.row_count):
+                    single_row.name = self.row_count
+                self._df = pd.concat([before, pd.DataFrame(single_row).transpose(), after])
+            else:  # pd.Dataframe
+                self._df = pd.concat([before, self._update_row_names(single_row), after], axis=0)
+
+        def insert_discontinuous_row_objects(index_list: list, df: DF) -> None:
+            if len(index_list) != df.row_count:
+                raise Exception("To insert discontinuous row objects, row count must match the number of index positions passed")
+            for counter, insert_index in enumerate(index_list):
+                insert_single_row_object(insert_index, df.select(row=counter, pandas_return_type=True))
+
         if in_place:
             if row is not None:
-                before = self.slice(to_row=index, pandas_return_type=True)
-                after = self.slice(from_row=index, pandas_return_type=True)
-                if isinstance(row, pd.Series):
-                    row.name = self.row_count
-                    self._df = pd.concat([before, pd.DataFrame(row).transpose(), after])
-                else:  # pd.Dataframe
-                    self._df = pd.concat([before, self._update_row_names(row), after], axis=0)
+                if isinstance(index, int):
+                    insert_single_row_object(index, row)
+                elif is_continuous_list(index):
+                    insert_single_row_object(index[0], row)
+                else:
+                    insert_discontinuous_row_objects(index, DF(row))
             elif column is not None:
                 if isinstance(column, pd.Series):
                     if column.name is None:
@@ -293,23 +308,32 @@ class DF:
             return _df
 
     @reversible
-    def remove(self, row: int or str or list = None, column: int or str or list = None):
-        if row is not None:
-            if isinstance(row, int):  # drop by row index
-                rows_to_drop = self.row_names[row]
-            elif isinstance(row, list):  # drop by row indexes
-                rows_to_drop = [self.row_names[r] for r in row]
-            else:  # drop by row name
-                rows_to_drop = row
-            self.dataframe.drop(rows_to_drop, axis=0, inplace=True)
-        if column is not None:
-            if isinstance(column, int):  # drop by column index
-                columns_to_drop = self.column_names[column]
-            elif isinstance(column, list):  # drop by column indexes
-                columns_to_drop = [self.column_names[c] for c in column]
-            else:  # drop by column name
-                columns_to_drop = column
-            self.dataframe.drop(columns_to_drop, axis=1, inplace=True)
+    def remove(self, row: int or str or list = None, column: int or str or list = None, in_place: bool = True) -> DF or None:
+        if row is not None and column is not None:
+            raise Exception("Please supply either a row or column argument, but not both")
+        if in_place:
+            if row is not None:
+                if isinstance(row, int):  # drop by row index
+                    rows_to_drop = self.row_names[row]
+                elif isinstance(row, list):  # drop by row indexes
+                    rows_to_drop = [self.row_names[r] for r in row]
+                else:  # drop by row name
+                    rows_to_drop = row
+                self.dataframe.drop(rows_to_drop, axis=0, inplace=True)
+            elif column is not None:
+                if isinstance(column, int):  # drop by column index
+                    columns_to_drop = self.column_names[column]
+                elif isinstance(column, list):  # drop by column indexes
+                    columns_to_drop = [self.column_names[c] for c in column]
+                else:  # drop by column name
+                    columns_to_drop = column
+                self.dataframe.drop(columns_to_drop, axis=1, inplace=True)
+            else:
+                raise Exception("Please supply a row or column argument")
+        else:
+            _df = DF(self.dataframe)
+            _df.remove(row=row, column=column, in_place=True)
+            return _df
 
     def undo(self) -> None:
         """ Reverts the most recent change to self """
