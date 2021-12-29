@@ -193,11 +193,11 @@ class DF(pd.DataFrame):
                 raise Exception(f"Invalid date grouping type \"{date_grouping}\"")
             if column is None:
                 raise Exception("Cannot group on a Row of dates")
-            date_group_by_object = self.groupby(pd.to_datetime(self.select(column=column)).dt.strftime(grouping))
+            date_group_by_object = self.groupby(pd.to_datetime(self.select(column=column, pandas_return_type=True)).dt.strftime(grouping))
             return {date_key: DF(date_group_by_object.get_group(date_key)) for date_key in list(date_group_by_object.groups.keys())}
 
     def sum_product(self, *columns: int or str) -> int or float:
-        product_column = pd.Series([1]*self.row_count)
+        product_column = pd.Series({row_index: 1 for row_index in self.index.values})
         for column in columns:
             product_column *= self.select(column=column, pandas_return_type=True)
         return product_column.sum()

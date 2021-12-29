@@ -10,7 +10,7 @@ class LinePlot(Plot):
     def __init__(self, x: Series or dict or list, y: Series or dict or list, **kwargs):
         self._shown = False
         self.x = x if isinstance(x, Series) else Series(x)
-        self.y = y if isinstance(y, Series) else Series(y)
+        self.y = [y] if isinstance(y, Series) else y
         self.figure, self.axes = plt.subplots()
         self.title = kwargs.get('title')
         self.x_label = kwargs.get('x_label')
@@ -53,8 +53,11 @@ class LinePlot(Plot):
 
     def create_plot(self) -> None:
         for y in self.y:
-            self.axes.plot(self.x.to_list(), y.to_list(), label=y.name)
+            self.add_line(y)
         self._add_chart_features()
+
+    def add_line(self, y: Series):
+        self.axes.plot(self.x.to_list(), y.to_list(), label=y.name)
 
     def _add_chart_features(self) -> None:
         if self.title is not None:
