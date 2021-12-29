@@ -82,7 +82,7 @@ REVERSE_MAPPING = {
     APPEND: REMOVE,
     INSERT: REMOVE,
     REMOVE: INSERT,
-    RESET: "_set_underlying_dataframe"
+    RESET: "_set_underlying_dataframe"  # todo: is there a way to pass __init__ here?
 }
 
 REVERSE_ARGS = {
