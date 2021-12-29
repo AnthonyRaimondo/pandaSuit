@@ -21,8 +21,10 @@ from pandaSuit.stats.logistic import LogisticModel
 
 
 class DF(pd.DataFrame):
-    def __init__(self, data=None, overwrite_data=None):
+    def __init__(self, data=None, csv: str = None, overwrite_data=None):
         if overwrite_data is None:
+            if csv is not None:
+                data = pd.read_csv(csv)
             super().__init__(data=data)
             self.data = data
             self._unwind = deque()
