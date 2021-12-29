@@ -49,10 +49,7 @@ class DF(pd.DataFrame):
                     result = self.loc[row, column]
                 else:
                     if self._names_supplied(row):
-                        if self._names_supplied(column):
-                            result = self.loc[row, column]
-                        else:
-                            result = self.loc[row, :][column]
+                        result = self.loc[row, :][column]
                     else:
                         if self._names_supplied(column):
                             result = self.iloc[row, :][column]
@@ -91,14 +88,16 @@ class DF(pd.DataFrame):
             result = self[self[column_name].str.contains(some_value, na=False)]
         else:
             result = self.loc[self[column_name] == some_value]
-        return result if pandas_return_type else DF(result)
+
+        return self._df_query_return(result, pandas_return_type)
 
     def where_not(self, column_name: str, some_value: object, pandas_return_type: bool = True) -> pd.DataFrame:
         if isinstance(some_value, str):
             result = self[~self[column_name].isin([some_value])]
         else:
             result = self.loc[self[column_name] != some_value]
-        return result if pandas_return_type else DF(result)
+
+        return self._df_query_return(result, pandas_return_type)
 
     def random_row(self) -> pd.DataFrame:
         return self.iloc[np_random.randint(0, self.shape[0] - 1)]
@@ -166,11 +165,11 @@ class DF(pd.DataFrame):
 
     def where_null(self, column: str, pandas_return_type: bool = True) -> DF or pd.DataFrame:
         result = self[self[column].isnull()]
-        return result if pandas_return_type else DF(result)
+        return self._df_query_return(result, pandas_return_type)
 
     def where_not_null(self, column: str, pandas_return_type: bool = True) -> DF or pd.DataFrame:
         result = self[self[column].notna()]
-        return result if pandas_return_type else DF(result)
+        return self._df_query_return(result, pandas_return_type)
 
     def group_by(self, column: int or str = None, row: int or str = None, date_grouping: str = None) -> dict:
         """
@@ -202,7 +201,7 @@ class DF(pd.DataFrame):
         return product_column.sum()
 
     @reversible
-    def update(self, row: int or str = None, column: int or str = None, to: object = None, in_place: bool = True) -> DF or None:
+    def update(self, row: int or str = None, column: int or str = None, to: object = None, in_place: bool = True) -> DF | None:
         if in_place:
             if column is not None:
                 if row is not None:
@@ -227,14 +226,14 @@ class DF(pd.DataFrame):
                 else:
                     pass
             else:
-                pass  # Note: if row=None and column=None, Exception is thrown from decorator. No need to raise one here.
+                pass  # Note: if row is None and column is None, Exception is raised in @reversible. No need to raise one here.
         else:
             _df = DF(self)
             _df.update(row=row, column=column, to=to, in_place=True)
             return _df
 
     @reversible
-    def append(self, row: pd.Series = None, column: pd.Series = None, in_place: bool = True) -> DF or None:
+    def append(self, row: pd.Series = None, column: pd.Series = None, in_place: bool = True) -> DF | None:
         if row is not None and column is None:
             if in_place:
                 self._append_row(row, in_place)
@@ -265,7 +264,7 @@ class DF(pd.DataFrame):
             raise Exception("row or column parameter must be set")
 
     @reversible
-    def insert(self, index: int or list, row: pd.Series or pd.DataFrame = None, column: pd.Series or pd.DataFrame = None, in_place: bool = True) -> DF or None:
+    def insert(self, index: int or list, row: pd.Series or pd.DataFrame = None, column: pd.Series or pd.DataFrame = None, in_place: bool = True) -> DF | None:
         def insert_single_row_object(single_index: int, single_row: pd.Series or pd.DataFrame) -> None:
             before = self.slice(to_row=single_index, pandas_return_type=True)
             after = self.slice(from_row=single_index, pandas_return_type=True)
@@ -282,6 +281,22 @@ class DF(pd.DataFrame):
             for counter, insert_index in enumerate(index_list):
                 insert_single_row_object(insert_index, df.select(row=counter, pandas_return_type=True))
 
+        def insert_single_column_object(single_index: int, single_column: pd.Series or pd.DataFrame) -> None:
+            before = self.slice(to_column=single_index, pandas_return_type=True)
+            after = self.slice(from_column=single_index, pandas_return_type=True)
+            if isinstance(single_column, pd.Series):
+                if single_column.name is None:
+                    single_column.name = self.column_count
+                self.__init__(overwrite_data=pd.concat([before, single_column, after], axis=1))
+            else:  # pd.DataFrame
+                self.__init__(overwrite_data=pd.concat([before, self._update_column_names(single_column), after], axis=1))
+
+        def insert_discontinuous_column_objects(index_list: list, df: DF) -> None:
+            if len(index_list) != df.column_count:
+                raise Exception("To insert discontinuous column objects, column count must match the number of index positions passed")
+            for counter, insert_index in enumerate(index_list):
+                insert_single_column_object(insert_index, df.select(column=counter, pandas_return_type=True))
+
         if in_place:
             if row is not None:
                 if isinstance(index, int):
@@ -291,14 +306,12 @@ class DF(pd.DataFrame):
                 else:
                     insert_discontinuous_row_objects(index, DF(row))
             elif column is not None:
-                if isinstance(column, pd.Series):
-                    if column.name is None:
-                        column.name = self.column_count
-                    super().insert(loc=index, column=column.name, value=column)
-                else:  # pd.DataFrame
-                    before = self.slice(to_column=index, pandas_return_type=True)
-                    after = self.slice(from_column=index, pandas_return_type=True)
-                    super().__init__(data=pd.concat([before, self._update_column_names(column), after], axis=1))
+                if isinstance(index, int):
+                    insert_single_column_object(index, column)
+                elif is_continuous_list(index):
+                    insert_single_column_object(index[0], column)
+                else:
+                    insert_discontinuous_column_objects(index, DF(column))
             else:
                 self._remove_latest_unwind_operation()
                 raise Exception("Must pass row OR column")
@@ -308,28 +321,34 @@ class DF(pd.DataFrame):
             return _df
 
     @reversible
-    def remove(self, row: int or str or list = None, column: int or str or list = None, in_place: bool = True) -> DF or None:
-        if row is not None and column is not None:
+    def remove(self, row: int or str or list = None, column: int or str or list = None, in_place: bool = True) -> DF | None:
+        if row is not None and column is not None:  # todo: remove this once .insert() method allows for row and column to be passed
             raise Exception("Please supply either a row or column argument, but not both")
         if in_place:
             if row is not None:
                 if isinstance(row, int):  # drop by row index
                     rows_to_drop = self.row_names[row]
-                elif isinstance(row, list):  # drop by row indexes
-                    rows_to_drop = [self.row_names[r] for r in row]
+                elif isinstance(row, list):
+                    if any([isinstance(row_selector, str) for row_selector in row]):
+                        rows_to_drop = row  # drop by row names
+                    else:
+                        rows_to_drop = [self.row_names[r] for r in row]  # drop by row indexes
                 else:  # drop by row name
                     rows_to_drop = row
                 self.drop(rows_to_drop, axis=0, inplace=True)
             elif column is not None:
                 if isinstance(column, int):  # drop by column index
                     columns_to_drop = self.column_names[column]
-                elif isinstance(column, list):  # drop by column indexes
-                    columns_to_drop = [self.column_names[c] for c in column]
+                elif isinstance(column, list):
+                    if any([isinstance(column_selector, str) for column_selector in column]):
+                        columns_to_drop = column  # drop by column names
+                    else:
+                        columns_to_drop = [self.column_names[r] for r in column]  # drop by column indexes
                 else:  # drop by column name
                     columns_to_drop = column
                 self.drop(columns_to_drop, axis=1, inplace=True)
             else:
-                raise Exception("Please supply a row or column argument")
+                pass  # Note: if row is None and column is None, Exception is raised in @reversible. No need to raise one here.
         else:
             _df = DF(self.dataframe)
             _df.remove(row=row, column=column, in_place=True)
@@ -343,18 +362,25 @@ class DF(pd.DataFrame):
             raise Exception("There are no DF manipulations to undo")
         self.__getattribute__(unwind_object.function)(**unwind_object.args[0])
 
-    def reset(self) -> None:
-        super().__init__(data=self.data)
-
-    def _append_row(self, row: pd.Series, in_place: bool) -> DF or None:
+    @reversible
+    def reset(self, in_place: bool = True) -> DF | None:
         if in_place:
-            super().__init__(data=super().append(other=row, ignore_index=True))
+            self._set_underlying_dataframe(data=self.data)
+        else:
+            return DF(data=self.data)
+
+    def _set_underlying_dataframe(self, data) -> None:
+        super().__init__(data=data)
+
+    def _append_row(self, row: pd.Series, in_place: bool) -> DF | None:
+        if in_place:
+            self._set_underlying_dataframe(data=super().append(other=row, ignore_index=True))
         else:
             _df = copy(self)
             _df = _df.append(other=row, ignore_index=True)
             return DF(_df)
 
-    def _append_column(self, column: pd.Series, in_place: bool) -> DF or None:
+    def _append_column(self, column: pd.Series, in_place: bool) -> DF | None:
         if in_place:
             super().insert(loc=self.column_count, column=column.name, value=column, allow_duplicates=True)
         else:
@@ -465,14 +491,14 @@ class RandomDF(DF):
             data[column_names[column_count]] = []
             for _ in range(self.number_of_rows):
                 data[column_names[column_count]].append(self._get_random_data_point(data_type, distribution))
-        super().__init__(data=data)
+        self._set_underlying_dataframe(data=data)
 
     def regenerate(self,
                    number_of_rows: int = None,
                    number_of_columns: int = None,
                    data_type: type = None,
                    distribution: str = None) -> None:
-        super().__init__(data=RandomDF(rows=number_of_rows if number_of_rows is not None else self.number_of_rows,
+        self._set_underlying_dataframe(data=RandomDF(rows=number_of_rows if number_of_rows is not None else self.number_of_rows,
                                        columns=number_of_columns if number_of_columns is not None else self.number_of_columns,
                                        data_type=data_type if data_type is not None else self.data_type,
                                        distribution=distribution if distribution is not None else self.distribution))
@@ -508,4 +534,4 @@ class EmptyDF(DF):
                     data[column_names[column_count]] = [None for _ in range(self.number_of_rows)]
             else:
                 data = [[None for _ in range(number_of_columns)] for _ in range(number_of_rows)]
-        super().__init__(data=data)
+        self._set_underlying_dataframe(data=data)
