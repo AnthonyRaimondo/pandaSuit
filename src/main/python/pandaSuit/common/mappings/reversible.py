@@ -1,6 +1,8 @@
+from copy import copy
+
 import pandas
 
-from pandaSuit.common.constant.decorators import UPDATE, APPEND, INSERT, REMOVE, SELECT
+from pandaSuit.common.constant.decorators import UPDATE, APPEND, INSERT, REMOVE, SELECT, RESET
 from pandaSuit.common.util.list_operations import create_index_list, find_index, find_indexes
 
 
@@ -71,18 +73,24 @@ def remove_args(**kwargs) -> dict:
                 return {"index": column_arg}
 
 
+def reset_args(**kwargs) -> dict:
+    return {"data": copy(kwargs.get("df"))}
+
+
 REVERSE_MAPPING = {
     UPDATE: UPDATE,
     APPEND: REMOVE,
     INSERT: REMOVE,
-    REMOVE: INSERT
+    REMOVE: INSERT,
+    RESET: "_set_underlying_dataframe"
 }
 
 REVERSE_ARGS = {
     UPDATE: update_args,
     APPEND: append_args,
     INSERT: insert_args,
-    REMOVE: remove_args
+    REMOVE: remove_args,
+    RESET: reset_args
 }
 
 INTERMEDIATE_REVERSE_FUNCTION_MAPPING = {

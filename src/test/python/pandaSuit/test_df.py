@@ -495,6 +495,24 @@ class TestDF:
         sample_df_with_row_names.undo()
         assert sample_df_with_row_names.equals(static_df_with_row_names)
 
+    def test_remove_exception(self, sample_df):
+        with pytest.raises(Exception):
+            sample_df.remove()
+        with pytest.raises(Exception):
+            sample_df.remove(row=0, column=0)
+
+    def test_reset(self, sample_df, static_df):
+        sample_df.update(row=2, column='a', to=100)
+        sample_df.insert(index=1, column=Series(name='d', data=[222, 333, 444]))
+        sample_df *= 2.5
+        df_after_undoing_reset = copy(sample_df)
+
+        sample_df.reset()
+        assert sample_df.equals(static_df)
+
+        sample_df.undo()
+        assert df_after_undoing_reset.equals(sample_df)
+
     def test_undo_exception(self, sample_df):
         with pytest.raises(Exception):
             sample_df.undo()
