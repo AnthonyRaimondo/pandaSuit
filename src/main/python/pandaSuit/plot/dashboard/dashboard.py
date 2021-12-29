@@ -17,7 +17,7 @@ class Dashboard:
                  layout: DF = None,
                  title: str = "",
                  background_color: str = "white"):
-        self.layout = layout if layout is not None else EmptyDF(number_of_rows=rows, number_of_columns=columns, column_headers=False)
+        self.layout = layout if layout is not None else EmptyDF(rows=rows, columns=columns, column_headers=False)
         for plot in plots:
             self.add_plot(plot)
         self.title = title
