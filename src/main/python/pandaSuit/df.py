@@ -22,11 +22,14 @@ from pandaSuit.stats.logistic import LogisticModel
 
 class DF(pd.DataFrame):
     def __init__(self, data=None, csv: str = None, overwrite_data=None):
+        super().__init__()
         if overwrite_data is None:
+            self._original_data = None
+            self._unwind = None
             if csv is not None:
                 data = pd.read_csv(csv)
             super().__init__(data=data)
-            self.data = data
+            self._original_data = data
             self._unwind = deque()
         else:
             super().__init__(data=overwrite_data)  # this allows for self.__init__ calls while maintaining initial state and unwind steps
@@ -193,11 +196,11 @@ class DF(pd.DataFrame):
                 raise Exception(f"Invalid date grouping type \"{date_grouping}\"")
             if column is None:
                 raise Exception("Cannot group on a Row of dates")
-            date_group_by_object = self.groupby(pd.to_datetime(self.select(column=column)).dt.strftime(grouping))
+            date_group_by_object = self.groupby(pd.to_datetime(self.select(column=column, pandas_return_type=True)).dt.strftime(grouping))
             return {date_key: DF(date_group_by_object.get_group(date_key)) for date_key in list(date_group_by_object.groups.keys())}
 
     def sum_product(self, *columns: int or str) -> int or float:
-        product_column = pd.Series([1]*self.row_count)
+        product_column = pd.Series({row_index: 1 for row_index in self.index.values})
         for column in columns:
             product_column *= self.select(column=column, pandas_return_type=True)
         return product_column.sum()
@@ -367,9 +370,9 @@ class DF(pd.DataFrame):
     @reversible
     def reset(self, in_place: bool = True) -> DF | None:
         if in_place:
-            self._set_underlying_dataframe(data=self.data)
+            self._set_underlying_dataframe(data=self._original_data)
         else:
-            return DF(data=self.data)
+            return DF(data=self._original_data)
 
     def _set_underlying_dataframe(self, data) -> None:
         super().__init__(data=data)
@@ -467,11 +470,7 @@ class DF(pd.DataFrame):
 
 
 class RandomDF(DF):
-    def __init__(self,
-                 rows: int = None,
-                 columns: int = None,
-                 data_type: type = float,
-                 distribution: str = 'uniform'):
+    def __init__(self, rows: int = None, columns: int = None, data_type: type = float, distribution: str = 'uniform'):
         """
         todo: add summary of class
         :param rows: Number of rows to create RandomDF with. If None, a random number of rows between 5 and 200 will be chosen
@@ -479,6 +478,7 @@ class RandomDF(DF):
         :param data_type: Type of random object to create and populate DF with. Options are float (default), int, and str
         :param distribution: Type of distribution to draw random numbers from (ignored if data_type=str. Options are uniform (default) and normal
         """
+        super().__init__()
         if rows is None:
             rows = np_random.randint(5, 200)
         if columns is None:
@@ -493,7 +493,7 @@ class RandomDF(DF):
             data[column_names[column_count]] = []
             for _ in range(self.number_of_rows):
                 data[column_names[column_count]].append(self._get_random_data_point(data_type, distribution))
-        self._set_underlying_dataframe(data=data)
+        super().__init__(data=data)
 
     def regenerate(self,
                    number_of_rows: int = None,
@@ -523,17 +523,18 @@ class RandomDF(DF):
 
 class EmptyDF(DF):
     def __init__(self,
-                 number_of_rows: int = None,
-                 number_of_columns: int = None,
+                 rows: int = None,
+                 columns: int = None,
                  column_headers: bool = True):
-        self.number_of_rows = number_of_rows
-        self.number_of_columns = number_of_columns
+        super().__init__()
+        self.number_of_rows = rows
+        self.number_of_columns = columns
         data = {}
-        if number_of_columns is not None:
+        if columns is not None:
             if column_headers:
-                column_names = self._create_str_column_names(number_of_columns)
+                column_names = self._create_str_column_names(columns)
                 for column_count in range(self.number_of_columns):
                     data[column_names[column_count]] = [None for _ in range(self.number_of_rows)]
             else:
-                data = [[None for _ in range(number_of_columns)] for _ in range(number_of_rows)]
-        self._set_underlying_dataframe(data=data)
+                data = [[None for _ in range(columns)] for _ in range(rows)]
+        super().__init__(data=data)
