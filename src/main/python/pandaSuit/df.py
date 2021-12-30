@@ -22,14 +22,17 @@ from pandaSuit.stats.logistic import LogisticModel
 
 class DF(pd.DataFrame):
     def __init__(self, data=None, csv: str = None, overwrite_data=None):
+        super().__init__()
         if overwrite_data is None:
+            self._original_data = None
+            self._unwind = None
             if csv is not None:
                 data = pd.read_csv(csv)
             super().__init__(data=data)
-            self.data = data
+            self._original_data = data
             self._unwind = deque()
         else:
-            super(DF, self).__init__(data=overwrite_data)  # this allows for self.__init__ calls while maintaining initial state and unwind steps
+            super().__init__(data=overwrite_data)  # this allows for self.__init__ calls while maintaining initial state and unwind steps
 
     def select(self,
                row: list or int or str = None,
@@ -193,11 +196,11 @@ class DF(pd.DataFrame):
                 raise Exception(f"Invalid date grouping type \"{date_grouping}\"")
             if column is None:
                 raise Exception("Cannot group on a Row of dates")
-            date_group_by_object = self.groupby(pd.to_datetime(self.select(column=column)).dt.strftime(grouping))
+            date_group_by_object = self.groupby(pd.to_datetime(self.select(column=column, pandas_return_type=True)).dt.strftime(grouping))
             return {date_key: DF(date_group_by_object.get_group(date_key)) for date_key in list(date_group_by_object.groups.keys())}
 
     def sum_product(self, *columns: int or str) -> int or float:
-        product_column = pd.Series([1]*self.row_count)
+        product_column = pd.Series({row_index: 1 for row_index in self.index.values})
         for column in columns:
             product_column *= self.select(column=column, pandas_return_type=True)
         return product_column.sum()
@@ -367,9 +370,9 @@ class DF(pd.DataFrame):
     @reversible
     def reset(self, in_place: bool = True) -> DF | None:
         if in_place:
-            self._set_underlying_dataframe(data=self.data)
+            self._set_underlying_dataframe(data=self._original_data)
         else:
-            return DF(data=self.data)
+            return DF(data=self._original_data)
 
     def _set_underlying_dataframe(self, data) -> None:
         super().__init__(data=data)

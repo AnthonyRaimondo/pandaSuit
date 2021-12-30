@@ -11,7 +11,7 @@ from pandaSuit.plot.plot import Plot
 class Dashboard:
     def __init__(self,
                  *plots,
-                 root: tkinter.Tk = None,
+                 root: tkinter.Tk or tkinter.Frame = None,
                  rows: int = 1,
                  columns: int = 1,
                  layout: DF = None,
@@ -22,14 +22,20 @@ class Dashboard:
             self.add_plot(plot)
         self.title = title
         self.background_color = background_color
-        self.root = root if root is not None else tkinter.Tk()
-        self.root.withdraw()
-        self.dashboard = tkinter.Toplevel(self.root)
-        self.dashboard.config(bg=self.background_color)
-        try:
+        if root is not None:
+            self.root = root
+            if isinstance(root, tkinter.Tk):
+                self.root.withdraw()
+                self.dashboard = tkinter.Toplevel(self.root)
+                self.dashboard.title(self.title)
+            else:
+                self.dashboard = tkinter.Frame(self.root)
+        else:
+            self.root = tkinter.Tk()
+            self.root.withdraw()
+            self.dashboard = tkinter.Toplevel(self.root)
             self.dashboard.title(self.title)
-        except AttributeError:
-            pass
+        self.dashboard.config(bg=self.background_color)
         self._shown = False
 
     def add_plot(self, plot: Plot, row: int = None, column: int = None) -> None:
@@ -48,7 +54,7 @@ class Dashboard:
         except IndexError:
             raise Exception(f"Dashboard position ({row}, {column}) specified does not exist.")
 
-    def display(self, pop_out: bool = True) -> None:
+    def display(self, standalone: bool = True) -> tkinter.Frame or None:
         if self._shown:
             rows, columns = self.layout.shape
             self = Dashboard(rows=rows, columns=columns, layout=self.layout, title=self.title, background_color=self.background_color)
@@ -63,10 +69,12 @@ class Dashboard:
                     column_count += 1
                 row_count += 1
             self._shown = True
-            if pop_out:
+            if standalone:
                 self.dashboard.protocol("WM_DELETE_WINDOW", self.on_closing)
                 self.dashboard.grab_set()
                 self.root.mainloop()
+            else:
+                return self.dashboard
 
     def on_closing(self):
         self.dashboard.grab_release()
