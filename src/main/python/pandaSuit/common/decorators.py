@@ -1,7 +1,6 @@
 import functools
 import inspect
 from collections import deque
-from copy import copy
 from typing import Mapping
 
 from pandaSuit.common.mappings.reversible import *
@@ -13,7 +12,11 @@ def extract_function_name(function_reference: str) -> str:
     return function_reference.split(".")[1].split(" at")[0]
 
 
-def in_place_operation(args: tuple, kwargs: dict, signature: inspect.Signature) -> bool:
+def in_place_operation(args: tuple, kwargs: dict, signature: inspect.Signature, function_name: str) -> bool:
+    # all "magic" in place operators can be undone (e.g., __iadd__, __imul__, etc.)
+    if function_name[:3] == "__i":
+        return True
+
     # search for in_place parameter in positional arguments
     if len(args) > 0:
         for count, arg in enumerate(args):
@@ -43,16 +46,36 @@ def get_method_parameters(df_object: object, name: str) -> Mapping[str, inspect.
     return get_method_signature(df_object, name).parameters
 
 
+def update_manipulation_log(df_object, function_name: str) -> None:
+    df_object.__setattr__("_manipulation_log", df_object.__getattr__("_manipulation_log") + deque([function_name]))
+
+
+def manipulation(func):
+    @functools.wraps(func)
+    def wrapper_manipulate(*args, **kwargs):
+        function_name = extract_function_name(func.__repr__())
+        if in_place_operation(args[1:], kwargs, get_method_signature(args[0], function_name), function_name):
+            update_manipulation_log(args[0], function_name)
+        else:
+            return func(*args, **kwargs)
+        # all "magic" in place operators require return statement and unwind step (e.g., __iadd__, __imul__, etc.)
+        if function_name[:3] == "__i":
+            return func(*args, **kwargs)
+        else:
+            func(*args, **kwargs)
+    return wrapper_manipulate
+
+
 def reversible(func):
     """Allow for reversing an 'in place' operation on pandaSuit object"""
     @functools.wraps(func)
     def wrapper_reverse(*args, **kwargs):
         caller_function = inspect.stack()[1][3]
+        function_name = extract_function_name(func.__repr__())
         if caller_function != "undo":  # this occurs when a @reversible method is un-done by another @reversible method
-            function_name = extract_function_name(func.__repr__())
             df_object = args[0]
             method_signature = get_method_signature(df_object, function_name)
-            if not in_place_operation(args[1:], kwargs, method_signature):
+            if not in_place_operation(args[1:], kwargs, method_signature, function_name):
                 return func(*args, **kwargs)  # don't create unwind step, but return value from method called
             else:
                 if len(args) > 1:  # convert positional args into keyword args
@@ -69,5 +92,9 @@ def reversible(func):
                 if "in_place" in get_method_parameters(df_object, reverse_function):
                     reverse_args.update({"in_place": True})
                 df_object.__setattr__(UNWIND_LIST, df_object.__getattribute__(UNWIND_LIST) + deque([Unwind(reverse_function, reverse_args)]))
-        func(*args, **kwargs)
+        # all "magic" in place operators require return statement and unwind step (e.g., __iadd__, __imul__, etc.)
+        if function_name[:3] == "__i":
+            return func(*args, **kwargs)
+        else:
+            func(*args, **kwargs)
     return wrapper_reverse

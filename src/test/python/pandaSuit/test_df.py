@@ -638,6 +638,38 @@ class TestDF:
         df = DF()
         assert df.is_empty
 
+    def test_iadd(self, sample_df, static_df):
+        sample_df += 5
+        gt_df = DF(sample_df > static_df)
+        assert all([field for row in gt_df.rows for field in row])
+
+        sample_df.undo()
+        assert static_df.equals(sample_df)
+
+    def test_isub(self, sample_df, static_df):
+        sample_df -= 1
+        lt_df = DF(sample_df < static_df)
+        assert all([field for row in lt_df.rows for field in row])
+
+        sample_df.undo()
+        assert static_df.equals(sample_df)
+
+    def test_imul(self, sample_df, static_df):
+        sample_df *= 2
+        gt_df = DF(sample_df > static_df)
+        assert all([field for row in gt_df.rows for field in row])
+
+        sample_df.undo()
+        assert sample_df.equals(static_df.astype(float))
+
+    def test_itruediv(self, sample_df, static_df):
+        sample_df /= 2
+        lt_df = DF(sample_df < static_df)
+        assert all([field for row in lt_df.rows for field in row])
+
+        sample_df.undo()
+        assert sample_df.equals(static_df.astype(float))
+
     def test_random_df(self):
         rdf = RandomDF(rows=10, columns=10)
         assert rdf.row_count == 10
