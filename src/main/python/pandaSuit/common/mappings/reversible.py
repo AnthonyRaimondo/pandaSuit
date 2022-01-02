@@ -2,8 +2,8 @@ from copy import copy
 
 import pandas
 
-from pandaSuit.common.constant.decorators import UPDATE, APPEND, INSERT, REMOVE, SELECT, RESET
-from pandaSuit.common.util.list_operations import create_index_list, find_index, find_indexes
+from pandaSuit.common.constant import decorators as method_names
+from pandaSuit.common.util.list_operations import create_index_list, find_index
 
 
 def intermediate_update_args(kwargs: dict) -> dict:
@@ -77,30 +77,42 @@ def reset_args(**kwargs) -> dict:
     return {"data": copy(kwargs.get("df"))}
 
 
+def dunder_i_args(**kwargs) -> dict:
+    return {"other": kwargs.get("arguments").get("other")}
+
+
 REVERSE_MAPPING = {
-    UPDATE: UPDATE,
-    APPEND: REMOVE,
-    INSERT: REMOVE,
-    REMOVE: INSERT,
-    RESET: "_set_underlying_dataframe"  # todo: is there a way to pass __init__ here?
+    method_names.UPDATE: method_names.UPDATE,
+    method_names.APPEND: method_names.REMOVE,
+    method_names.INSERT: method_names.REMOVE,
+    method_names.REMOVE: method_names.INSERT,
+    method_names.RESET: "_set_underlying_dataframe",  # todo: is there a way to pass __init__ here?
+    method_names.IADD: method_names.ISUB,
+    method_names.ISUB: method_names.IADD,
+    method_names.IMUL: method_names.IDIV,
+    method_names.IDIV: method_names.IMUL
 }
 
 REVERSE_ARGS = {
-    UPDATE: update_args,
-    APPEND: append_args,
-    INSERT: insert_args,
-    REMOVE: remove_args,
-    RESET: reset_args
+    method_names.UPDATE: update_args,
+    method_names.APPEND: append_args,
+    method_names.INSERT: insert_args,
+    method_names.REMOVE: remove_args,
+    method_names.RESET: reset_args,
+    method_names.IADD: dunder_i_args,
+    method_names.ISUB: dunder_i_args,
+    method_names.IMUL: dunder_i_args,
+    method_names.IDIV: dunder_i_args
 }
 
 INTERMEDIATE_REVERSE_FUNCTION_MAPPING = {
-    UPDATE: SELECT,
-    REMOVE: SELECT
+    method_names.UPDATE: method_names.SELECT,
+    method_names.REMOVE: method_names.SELECT
 }
 
 INTERMEDIATE_REVERSE_ARGS = {
-    UPDATE: intermediate_update_args,
-    REMOVE: intermediate_remove_args
+    method_names.UPDATE: intermediate_update_args,
+    method_names.REMOVE: intermediate_remove_args
 }
 
 
@@ -118,6 +130,6 @@ def remove_reverse_args(kwargs: dict, old_value: object) -> dict:
 
 
 INTERMEDIATE_ARGUMENT_MAPPING = {
-    UPDATE: update_reverse_args,
-    REMOVE: remove_reverse_args
+    method_names.UPDATE: update_reverse_args,
+    method_names.REMOVE: remove_reverse_args
 }

@@ -8,7 +8,7 @@ from numpy import random as np_random
 
 from pandaSuit.common.constant.date_constants import DATE_GROUPINGS
 from pandaSuit.common.constant.df import ALPHABET, DISTRIBUTIONS
-from pandaSuit.common.decorators import reversible
+from pandaSuit.common.decorators import reversible, manipulation
 from pandaSuit.common.unwind import Unwind
 from pandaSuit.common.util.list_operations import index_dictionary, create_index_list, find_indexes, is_continuous_list
 from pandaSuit.plot.bar import BarPlot
@@ -31,6 +31,7 @@ class DF(pd.DataFrame):
             super().__init__(data=data)
             self._original_data = data
             self._unwind = deque()
+            self._manipulation_log = deque()
         else:
             super().__init__(data=overwrite_data)  # this allows for self.__init__ calls while maintaining initial state and unwind steps
 
@@ -206,6 +207,7 @@ class DF(pd.DataFrame):
         return product_column.sum()
 
     @reversible
+    @manipulation
     def update(self, row: int or str = None, column: int or str = None, to: object = None, in_place: bool = True) -> DF | None:
         if in_place:
             if column is not None:
@@ -238,6 +240,7 @@ class DF(pd.DataFrame):
             return _df
 
     @reversible
+    @manipulation
     def append(self, row: pd.Series = None, column: pd.Series = None, in_place: bool = True) -> DF | None:
         if row is not None and column is None:
             if in_place:
@@ -269,6 +272,7 @@ class DF(pd.DataFrame):
             raise Exception("row or column parameter must be set")
 
     @reversible
+    @manipulation
     def insert(self, index: int or list, row: pd.Series or pd.DataFrame = None, column: pd.Series or pd.DataFrame = None, in_place: bool = True) -> DF | None:
         def insert_single_row_object(single_index: int, single_row: pd.Series or pd.DataFrame) -> None:
             before = self.slice(to_row=single_index, pandas_return_type=True)
@@ -327,6 +331,7 @@ class DF(pd.DataFrame):
             return _df
 
     @reversible
+    @manipulation
     def remove(self, row: int or str or list = None, column: int or str or list = None, in_place: bool = True) -> DF | None:
         if row is not None and column is not None:  # todo: remove this once .insert() method allows for row and column to be passed
             raise Exception("Please supply either a row or column argument, but not both")
@@ -365,11 +370,13 @@ class DF(pd.DataFrame):
         for _ in range(steps):
             try:
                 unwind_object: Unwind = self._unwind.pop()
+                del self._manipulation_log[-1]
             except IndexError:
                 raise Exception("There are no DF manipulations to undo")
             self.__getattribute__(unwind_object.function)(**unwind_object.args[0])
 
     @reversible
+    @manipulation
     def reset(self, in_place: bool = True) -> DF | None:
         if in_place:
             self._set_underlying_dataframe(data=self._original_data)
@@ -469,6 +476,50 @@ class DF(pd.DataFrame):
     @property
     def column_count(self) -> int:
         return len(self.columns)
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, DF):
+            return self.__gt__(other + 0)
+        else:
+            return super().__gt__(other)
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, DF):
+            return self.__lt__(other + 0)
+        else:
+            return super().__lt__(other)
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, DF):
+            return self.__ge__(other + 0)
+        else:
+            return super().__ge__(other)
+
+    def __le__(self, other) -> bool:
+        if isinstance(other, DF):
+            return self.__le__(other + 0)
+        else:
+            return super().__le__(other)
+
+    @reversible
+    @manipulation
+    def __iadd__(self, other) -> DF:
+        return super().__iadd__(other)
+
+    @reversible
+    @manipulation
+    def __isub__(self, other) -> DF:
+        return super().__isub__(other)
+
+    @reversible
+    @manipulation
+    def __imul__(self, other) -> DF:
+        return super().__imul__(other)
+
+    @reversible
+    @manipulation
+    def __itruediv__(self, other) -> DF:
+        return super().__itruediv__(other)
 
 
 class RandomDF(DF):
