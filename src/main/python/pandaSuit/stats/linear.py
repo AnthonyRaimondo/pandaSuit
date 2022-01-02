@@ -5,7 +5,7 @@ from pandas import Series, DataFrame
 class LinearModel:
 
     def __init__(self, dependent: Series or DataFrame, independent: Series or DataFrame, intercept: bool = True):
-        super().__init__()
+        # super().__init__()
         self.dependent = dependent
         self.independent = independent
         self.include_intercept = intercept

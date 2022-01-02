@@ -4,7 +4,14 @@ from copy import copy
 import pytest
 from pandas import Series, DataFrame
 
-from pandaSuit.df import DF
+from pandaSuit.df import DF, RandomDF, EmptyDF
+from pandaSuit.plot.bar import BarPlot
+from pandaSuit.plot.histogram import Histogram
+from pandaSuit.plot.line import LinePlot
+from pandaSuit.plot.pie import PiePlot
+from pandaSuit.plot.scatter import ScatterPlot
+from pandaSuit.stats.linear import LinearModel
+from pandaSuit.stats.logistic import LogisticModel
 
 
 @pytest.fixture(scope="function")
@@ -44,6 +51,10 @@ def static_df_with_row_names() -> DF:
 
 
 class TestDF:
+
+    def test_init_from_csv(self):
+        df = DF(csv="C:\\Users\\antho\\projects\\pandaSuit\\src\\test\\resources\\test.csv")
+        assert isinstance(df, DF)
 
     def test_select_by_index(self, sample_df: DF):
         result = sample_df.select(row=0)
@@ -244,6 +255,61 @@ class TestDF:
     #
     #     assert new_row.equals(sample_df.select(row=row))
 
+    def test_random_row(self, sample_df):
+        row = sample_df.random_row()
+        comparisons = [row.equals(sample_df.random_row()) for _ in range(19)]
+
+        # in theory, this unit test fails with probability 2.87e-10 --> (1/3)**20
+        assert not all(comparisons)
+
+    def test_regress(self):
+        rdf = RandomDF(rows=1000, columns=2)
+
+        linear = rdf.regress(y=1, x=0)
+        assert isinstance(linear, LinearModel)
+
+        rdf['binary_col'] = rdf.select(column=1) > 0.5
+        logit = rdf.regress(y="binary_col", x=0, logit=True)
+        assert isinstance(logit, LogisticModel)
+
+    def test_line_plot(self, sample_df):
+        single_lp = sample_df.line_plot('a')
+        assert isinstance(single_lp, LinePlot)
+
+        multi_lp = sample_df.line_plot('a', 'b')
+        assert isinstance(multi_lp, LinePlot)
+
+    def test_bar_plot(self, sample_df):
+        single_bp = sample_df.bar_plot('a')
+        assert isinstance(single_bp, BarPlot)
+
+        multi_bp = sample_df.bar_plot('a', 'b')
+        assert isinstance(multi_bp, BarPlot)
+
+        all_bp = sample_df.bar_plot()
+        assert isinstance(all_bp, BarPlot)
+
+    def test_pie_plot(self, sample_df):
+        single_pp = sample_df.pie_plot('a')
+        assert isinstance(single_pp, PiePlot)
+
+        multi_pp = sample_df.pie_plot('a', 'b')
+        assert isinstance(multi_pp, PiePlot)
+
+        all_pp = sample_df.pie_plot()
+        assert isinstance(all_pp, PiePlot)
+
+    def test_scatter_plot(self, sample_df):
+        single_sp = sample_df.scatter_plot('a')
+        assert isinstance(single_sp, ScatterPlot)
+
+        multi_sp = sample_df.scatter_plot('a', 'b')
+        assert isinstance(multi_sp, ScatterPlot)
+
+    def test_histogram(self, sample_df):
+        hist = sample_df.histogram('c')
+        assert isinstance(hist, Histogram)
+
     def test_update_column_in_place_by_index(self, sample_df: DF):
         column_index = 1
         old_column = copy(sample_df.select(column=column_index, pandas_return_type=True))
@@ -312,6 +378,11 @@ class TestDF:
 
         sample_df.undo()
         assert old_column.equals(sample_df.select(column=column_name, pandas_return_type=True))
+
+    def test_update_and_return(self, sample_df: DF):
+        column_name = "a"
+        new_column = Series([7, 8, 9])
+        assert new_column.equals(sample_df.update(column=column_name, to=new_column, in_place=False).select(column=column_name, pandas_return_type=True))
 
     def test_update_row_and_return_by_name(self, sample_df):
         pass
@@ -417,9 +488,16 @@ class TestDF:
         sample_df.undo()
         assert sample_df.equals(static_df)
 
+        # not in place
+        assert columns.equals(sample_df.insert(index=[0, 2, 4], column=columns, in_place=False).select(column=[0, 2, 4], pandas_return_type=True))
+
     def test_insert_with_exception(self, sample_df):
         with pytest.raises(Exception):
             sample_df.insert(index=1)
+        assert len(sample_df._unwind) == 0
+
+        with pytest.raises(Exception):
+            sample_df.insert(index=[1, 3], row=sample_df)
         assert len(sample_df._unwind) == 0
 
     def test_remove(self, sample_df_with_row_names, static_df_with_row_names):
@@ -495,6 +573,9 @@ class TestDF:
         sample_df_with_row_names.undo()
         assert sample_df_with_row_names.equals(static_df_with_row_names)
 
+        # not in place
+        assert sample_df_with_row_names.remove(column=['a', 'c'], in_place=False).shape == (3, 1)
+
     def test_remove_exception(self, sample_df):
         with pytest.raises(Exception):
             sample_df.remove()
@@ -512,6 +593,13 @@ class TestDF:
 
         sample_df.undo()
         assert df_after_undoing_reset.equals(sample_df)
+
+        sample_df.update(row=2, column='a', to=100)
+        sample_df.insert(index=1, column=Series(name='d', data=[222, 333, 444]))
+        sample_df *= 2.5
+        assert not df_after_undoing_reset.equals(sample_df)
+
+        assert static_df.equals(sample_df.reset(in_place=False))
 
     def test_undo_exception(self, sample_df):
         with pytest.raises(Exception):
@@ -545,3 +633,46 @@ class TestDF:
     def test_getattribute_fallout(self, sample_df):
         with pytest.raises(AttributeError):
             sample_df.__getattribute__("some_non_existent_field")
+
+    def test_is_empty(self):
+        df = DF()
+        assert df.is_empty
+
+    def test_random_df(self):
+        rdf = RandomDF(rows=10, columns=10)
+        assert rdf.row_count == 10
+        assert rdf.column_count == 10
+
+        string_rdf = RandomDF(rows=10, columns=3, data_type=str)
+        assert all([isinstance(field, str) for row in string_rdf.rows for field in row])
+
+        none_rdf = RandomDF(rows=10, columns=3, data_type=None)
+        assert all([field is None for row in none_rdf.rows for field in row])
+
+    def test_regenerate_random_df(self):
+        rdf = RandomDF()
+        static_rdf = RandomDF(rows=rdf.row_count, columns=rdf.column_count)
+        rdf.remove(row=0)
+        rdf.remove(column=0)
+        assert rdf.row_count != static_rdf.row_count
+        assert rdf.column_count != static_rdf.column_count
+
+        rdf.regenerate()
+        assert rdf.row_count == static_rdf.row_count
+        assert rdf.column_count == static_rdf.column_count
+
+    def test_random_df_with_unsupported_distribution(self):
+        with pytest.raises(Exception):
+            RandomDF(distribution='some random distribution')
+
+    def test_random_df_with_unsupported_type(self):
+        with pytest.raises(Exception):
+            RandomDF(data_type=list)
+
+    def test_empty_df(self):
+        edf = EmptyDF(rows=10, columns=3)
+        assert all([field is None for row in edf.rows for field in row])
+        assert all([isinstance(header, str) for header in edf.column_names])
+
+        edf_with_column_headers = EmptyDF(rows=10, columns=3, column_headers=False)
+        assert all([not isinstance(header, str) for header in edf_with_column_headers.column_names])
