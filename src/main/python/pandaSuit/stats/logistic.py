@@ -17,7 +17,10 @@ class LogisticModel:
         return self._practical_prediction(input) if practical else self._theoretical_prediction(input)
 
     def _fit(self) -> LogisticRegression:
-        y = self.dependent.to_list()
+        if isinstance(self.dependent, DataFrame):
+            y = self.dependent.values
+        else:
+            y = self.dependent.to_list()
         if isinstance(self.independent, Series):
             x = self.independent.to_numpy().reshape(-1, 1)
         else:

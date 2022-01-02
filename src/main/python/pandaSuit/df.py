@@ -104,7 +104,7 @@ class DF(pd.DataFrame):
 
         return self._df_query_return(result, pandas_return_type)
 
-    def random_row(self) -> pd.DataFrame:
+    def random_row(self) -> pd.Series:
         return self.iloc[np_random.randint(0, self.shape[0] - 1)]
 
     def regress(self, y: str or int, x: list or str or int, logit: bool = False) -> LinearModel or LogisticModel:
@@ -282,6 +282,7 @@ class DF(pd.DataFrame):
 
         def insert_discontinuous_row_objects(index_list: list, df: DF) -> None:
             if len(index_list) != df.row_count:
+                self._remove_latest_unwind_operation()
                 raise Exception("To insert discontinuous row objects, row count must match the number of index positions passed")
             for counter, insert_index in enumerate(index_list):
                 insert_single_row_object(insert_index, df.select(row=counter, pandas_return_type=True))
@@ -355,7 +356,7 @@ class DF(pd.DataFrame):
             else:
                 pass  # Note: if row is None and column is None, Exception is raised in @reversible. No need to raise one here.
         else:
-            _df = DF(self.dataframe)
+            _df = DF(self)
             _df.remove(row=row, column=column, in_place=True)
             return _df
 
