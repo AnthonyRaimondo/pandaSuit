@@ -360,13 +360,14 @@ class DF(pd.DataFrame):
             _df.remove(row=row, column=column, in_place=True)
             return _df
 
-    def undo(self) -> None:
+    def undo(self, steps: int = 1) -> None:
         """ Reverts the most recent change to self """
-        try:
-            unwind_object: Unwind = self._unwind.pop()
-        except IndexError:
-            raise Exception("There are no DF manipulations to undo")
-        self.__getattribute__(unwind_object.function)(**unwind_object.args[0])
+        for _ in range(steps):
+            try:
+                unwind_object: Unwind = self._unwind.pop()
+            except IndexError:
+                raise Exception("There are no DF manipulations to undo")
+            self.__getattribute__(unwind_object.function)(**unwind_object.args[0])
 
     @reversible
     def reset(self, in_place: bool = True) -> DF | None:
