@@ -10,6 +10,7 @@ IADD = "__iadd__"
 ISUB = "__isub__"
 IMUL = "__imul__"
 IDIV = "__itruediv__"
+IPOW = "__ipow__"
 
 # other methods
 SELECT = "select"

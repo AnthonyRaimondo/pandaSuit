@@ -503,23 +503,28 @@ class DF(pd.DataFrame):
 
     @reversible
     @manipulation
-    def __iadd__(self, other) -> DF:
+    def __iadd__(self, other) -> pd.DataFrame:
         return super().__iadd__(other)
 
     @reversible
     @manipulation
-    def __isub__(self, other) -> DF:
+    def __isub__(self, other) -> pd.DataFrame:
         return super().__isub__(other)
 
     @reversible
     @manipulation
-    def __imul__(self, other) -> DF:
+    def __imul__(self, other) -> pd.DataFrame:
         return super().__imul__(other)
 
     @reversible
     @manipulation
-    def __itruediv__(self, other) -> DF:
+    def __itruediv__(self, other) -> pd.DataFrame:
         return super().__itruediv__(other)
+
+    @reversible
+    @manipulation
+    def __ipow__(self, other) -> pd.DataFrame:
+        return super().__ipow__(other)
 
 
 class RandomDF(DF):

@@ -81,6 +81,11 @@ def dunder_i_args(**kwargs) -> dict:
     return {"other": kwargs.get("arguments").get("other")}
 
 
+def i_pow_args(**kwargs) -> dict:
+    reciprocal = 1 / kwargs.get("arguments").get("other")
+    return {"other": reciprocal}
+
+
 REVERSE_MAPPING = {
     method_names.UPDATE: method_names.UPDATE,
     method_names.APPEND: method_names.REMOVE,
@@ -90,7 +95,8 @@ REVERSE_MAPPING = {
     method_names.IADD: method_names.ISUB,
     method_names.ISUB: method_names.IADD,
     method_names.IMUL: method_names.IDIV,
-    method_names.IDIV: method_names.IMUL
+    method_names.IDIV: method_names.IMUL,
+    method_names.IPOW: method_names.IPOW
 }
 
 REVERSE_ARGS = {
@@ -102,7 +108,8 @@ REVERSE_ARGS = {
     method_names.IADD: dunder_i_args,
     method_names.ISUB: dunder_i_args,
     method_names.IMUL: dunder_i_args,
-    method_names.IDIV: dunder_i_args
+    method_names.IDIV: dunder_i_args,
+    method_names.IPOW: i_pow_args
 }
 
 INTERMEDIATE_REVERSE_FUNCTION_MAPPING = {

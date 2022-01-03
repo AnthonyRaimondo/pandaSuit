@@ -670,6 +670,14 @@ class TestDF:
         sample_df.undo()
         assert sample_df.equals(static_df.astype(float))
 
+    def test_ipow(self, sample_df, static_df):
+        sample_df **= 2
+        gt_df = DF(sample_df >= static_df)
+        assert all([field for row in gt_df.rows for field in row])
+
+        sample_df.undo()
+        assert sample_df.equals(static_df.astype(float))
+
     def test_random_df(self):
         rdf = RandomDF(rows=10, columns=10)
         assert rdf.row_count == 10
